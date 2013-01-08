@@ -37,39 +37,32 @@
   <build>
     <plugins>
       <plugin>
-        <!-- must supply checkstyle/checkstyle.xml and suppressions.xml to use this -->
+        <!-- must supply build-resources module with checkstyle/checkstyle.xml
+             and suppressions.xml to use this -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <dependencies>
           <dependency>
             <groupId>org.kiji.mapreduce</groupId>
-            <artifactId>build-tools</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>build-resources</artifactId>
+            <version>${project.version}</version>
           </dependency>
         </dependencies>
-        <configuration>
-          <configLocation>checkstyle/checkstyle.xml</configLocation>
-          <suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>
-          <headerLocation>checkstyle/header-file.txt</headerLocation>
-        </configuration>
       </plugin>
 
       <plugin>
-        <!-- must supply findbugs/includeFilter.xml and excludeFilter.xml to use this -->
+        <!-- must supply build-resources module with findbugs/includeFilter.xml
+             and excludeFilter.xml to use this -->
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
         <dependencies>
           <dependency>
             <groupId>org.kiji.mapreduce</groupId>
-            <artifactId>build-tools</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>build-resources</artifactId>
+            <version>${project.version}</version>
           </dependency>
         </dependencies>
-        <configuration>
-          <includeFilterFile>findbugs/includeFilter.xml</includeFilterFile>
-          <excludeFilterFile>findbugs/excludeFilter.xml</excludeFilterFile>
-        </configuration>
-      </plugin>
+     </plugin>
     </plugins>
   </build>
 
@@ -81,7 +74,7 @@
   </properties>
 
   <modules>
-    <module>build-tools</module>
+    <module>build-resources</module>
     <module>kiji-mapreduce</module>
   </modules>
 
