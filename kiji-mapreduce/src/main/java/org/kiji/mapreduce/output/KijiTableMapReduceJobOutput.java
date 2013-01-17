@@ -29,6 +29,7 @@ import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.KijiConfKeys;
+import org.kiji.mapreduce.KijiTableContext;
 import org.kiji.mapreduce.MapReduceJobOutput;
 import org.kiji.mapreduce.context.DirectKijiTableWriterContext;
 import org.kiji.schema.Kiji;
@@ -37,7 +38,11 @@ import org.kiji.schema.KijiTable;
 /**
  * MapReduce job output configuration that directly writes to a Kiji table.
  *
- * Use of this job output configuration is discouraged.
+ * Use of this job output configuration is discouraged for many reasons:
+ *  <li> It may induce a very high load on the target HBase cluster.
+ *  <li> It may result in partial writes (eg. if the job fails half through).
+ *
+ * The recommended way to write to HBase tables is through the {@link HFileMapReduceJobOutput}.
  */
 @ApiAudience.Public
 public class KijiTableMapReduceJobOutput extends MapReduceJobOutput {
@@ -91,7 +96,10 @@ public class KijiTableMapReduceJobOutput extends MapReduceJobOutput {
     job.setOutputFormatClass(NullOutputFormat.class);
 
     // Kiji table context:
-    conf.set(KijiConfKeys.KIJI_TABLE_CONTEXT_CLASS, DirectKijiTableWriterContext.class.getName());
+    conf.setClass(
+        KijiConfKeys.KIJI_TABLE_CONTEXT_CLASS,
+        DirectKijiTableWriterContext.class,
+        KijiTableContext.class);
 
     job.setNumReduceTasks(mNumReduceTasks);
 

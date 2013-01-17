@@ -48,6 +48,7 @@ import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.HFileKeyValue;
 import org.kiji.mapreduce.JobConfigurationException;
 import org.kiji.mapreduce.KijiConfKeys;
+import org.kiji.mapreduce.KijiTableContext;
 import org.kiji.mapreduce.context.HFileWriterContext;
 import org.kiji.schema.KijiRowKeySplitter;
 import org.kiji.schema.KijiTable;
@@ -122,7 +123,10 @@ public class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
     job.setOutputFormatClass(KijiHFileOutputFormat.class);
 
     // Kiji table context:
-    conf.set(KijiConfKeys.KIJI_TABLE_CONTEXT_CLASS, HFileWriterContext.class.getName());
+    conf.setClass(
+        KijiConfKeys.KIJI_TABLE_CONTEXT_CLASS,
+        HFileWriterContext.class,
+        KijiTableContext.class);
 
     // Configure the total order partitioner so generated HFile shards are contiguous and sorted.
     final HBaseKijiTable kijiTable = HBaseKijiTable.downcast(getTable());

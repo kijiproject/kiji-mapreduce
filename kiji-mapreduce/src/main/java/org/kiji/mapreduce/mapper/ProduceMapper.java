@@ -19,8 +19,6 @@
 
 package org.kiji.mapreduce.mapper;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import java.io.IOException;
 
 import com.google.common.base.Preconditions;
@@ -68,7 +66,7 @@ public class ProduceMapper extends KijiTableMapper<HFileKeyValue, NullWritable> 
   @Override
   protected void setup(Context context) throws IOException {
     super.setup(context);
-    checkState(mProducerContext == null);
+    Preconditions.checkState(mProducerContext == null);
     final Configuration conf = context.getConfiguration();
     mProducer = KijiProducers.create(conf);
 
@@ -90,7 +88,7 @@ public class ProduceMapper extends KijiTableMapper<HFileKeyValue, NullWritable> 
   /** {@inheritDoc} */
   @Override
   protected void cleanup(Context context) throws IOException {
-    checkState(mProducerContext != null);
+    Preconditions.checkState(mProducerContext != null);
     mProducer.cleanup(mProducerContext);
     mProducerContext = null;
     super.cleanup(context);

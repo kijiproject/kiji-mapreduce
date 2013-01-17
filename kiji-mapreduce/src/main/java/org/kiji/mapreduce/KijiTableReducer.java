@@ -19,21 +19,25 @@
 
 package org.kiji.mapreduce;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import java.io.IOException;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.kiji.annotations.ApiAudience;
+
 /**
  * Base class for reducers that emit to a Kiji table.
+ *
+ * Intended to be inherited by users to implement custom reducers writing to Kiji tables.
  *
  * @param <K> Type of the reducer input key.
  * @param <V> Type of the reducer input values.
  */
+@ApiAudience.Public
 public abstract class KijiTableReducer<K, V>
     extends KijiBaseReducer<K, V, HFileKeyValue, NullWritable> {
   private static final Logger LOG = LoggerFactory.getLogger(KijiTableReducer.class);
@@ -47,7 +51,7 @@ public abstract class KijiTableReducer<K, V>
   /** {@inheritDoc} */
   @Override
   protected void setup(Context hadoopContext) throws IOException, InterruptedException {
-    checkState(mTableContext == null);
+    Preconditions.checkState(mTableContext == null);
     super.setup(hadoopContext);
     final Configuration conf = hadoopContext.getConfiguration();
 
@@ -62,14 +66,14 @@ public abstract class KijiTableReducer<K, V>
   protected final void reduce(K key, Iterable<V> values, Context hadoopContext)
       throws IOException, InterruptedException {
     // Implements the Hadoop reduce function:
-    checkState(mTableContext != null);
+    Preconditions.checkState(mTableContext != null);
     reduce(key, values, mTableContext);
   }
 
   /** {@inheritDoc} */
   @Override
   protected void cleanup(Context hadoopContext) throws IOException, InterruptedException {
-    checkState(mTableContext != null);
+    Preconditions.checkState(mTableContext != null);
     mTableContext.close();
     mTableContext = null;
     super.cleanup(hadoopContext);
