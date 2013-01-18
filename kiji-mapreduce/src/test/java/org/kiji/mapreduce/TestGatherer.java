@@ -124,7 +124,7 @@ public class TestGatherer {
     conf.set("fs.defaultFS", "file://" + testTmpDir);
 
     KijiInstaller.install(kijiInstanceURI, conf);
-    final Kiji kiji = Kiji.open(kijiInstanceURI, conf);
+    final Kiji kiji = Kiji.Factory.open(kijiInstanceURI, conf);
     LOG.info(String.format("Opened Kiji instance '%s'.", kiji.getName()));
 
     // Create input Kiji table:

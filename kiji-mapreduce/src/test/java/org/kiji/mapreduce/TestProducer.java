@@ -109,7 +109,7 @@ public class TestProducer {
     conf.set("mapred.job.tracker", "local");
 
     KijiInstaller.install(kijiInstanceURI, conf);
-    final Kiji kiji = Kiji.open(kijiInstanceURI, conf);
+    final Kiji kiji = Kiji.Factory.open(kijiInstanceURI, conf);
     LOG.info(String.format("Opened Kiji instance '%s'.", kiji.getName()));
 
     // Create input table:
@@ -226,7 +226,7 @@ public class TestProducer {
     conf.set("mapred.job.tracker", "local");
 
     KijiInstaller.install(kijiInstanceURI, conf);
-    final Kiji kiji = Kiji.open(kijiInstanceURI, conf);
+    final Kiji kiji = Kiji.Factory.open(kijiInstanceURI, conf);
     LOG.info(String.format("Opened Kiji instance '%s'.", kiji.getName()));
 
     // Create input table:
