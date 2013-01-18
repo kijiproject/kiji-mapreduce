@@ -20,11 +20,20 @@
 package org.kiji.mapreduce.kvstore;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Formatter;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.KeyValueStore;
 import org.kiji.mapreduce.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.util.Lists;
 
 /**
  * Abstract base class that provides common functionality to file-backed
@@ -54,7 +64,26 @@ import org.kiji.mapreduce.KeyValueStoreConfiguration;
 @ApiAudience.Public
 public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
     implements Configurable {
-  private static final Logger LOG = LoggerFactory.getLogger(FileKeyValueStore.class);
+
+  private static final Logger LOG = LoggerFactory.getLogger(
+      FileKeyValueStore.class.getName());
+
+  /**
+   * Configuration key for the KeyValueStore definition that sets whether input files are
+   * stored in the DistributedCache. If empty, then DCache is disabled. If non-empty,
+   * then DCache target file names are expected to be prefixed by the string in this
+   * configuration key.
+   */
+  public static final String CONF_DCACHE_PREFIX_KEY = "dcache.prefix";
+
+  /**
+   * Boolean flag used in XML Configuration files only to state that the files
+   * specified are
+   * HDFS files, but should be loaded into the DistributedCache as part
+   * of the job. This flag is not recorded as part of addToConfiguration().
+   */
+  public static final String CONF_USE_DCACHE_KEY = "dcache";
+  // This flag sets mUseDCache.
 
   /**
    * By default, it is assumed that the user wants to load this KeyValueStore
@@ -62,7 +91,23 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
    */
   public static final boolean USE_DCACHE_DEFAULT = true;
 
-  private FileKeyValueArrayStore<K, V> mStore;
+  /**
+   * Suffix for the KeyValueStore definition that that is set to the list of
+   * input paths. This may be multiple comma-delimited paths.
+   */
+  public static final String CONF_PATHS_KEY = "paths";
+
+  /** The Hadoop configuration. */
+  private Configuration mConf;
+
+  /** True if we should distribute the input files via the DistributedCache. */
+  private boolean mUseDCache;
+
+  /** Files stored in the distributed cache have this as their prefix. */
+  private String mDCachePrefix;
+
+  /** List of input paths to files to include in the store. */
+  private List<Path> mInputPaths;
 
   /**
    * Input configuration options that configure a file-backed KeyValueStore.
@@ -119,6 +164,7 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
       return (T) this;
     }
 
+
     /**
      * Sets a flag indicating the use of the DistributedCache to distribute
      * input files.
@@ -160,43 +206,33 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
     }
   }
 
+  /** Default constructor. This is for use by ReflectionUtils; you should not use it. */
+  public FileKeyValueStore() {
+    this(new Options<Options<?>>());
+  }
+
   /**
-   * Constructor for the FileKeyValueStore.
+   * Constructor that accepts an Options argument to configure it.
    *
-   * @param store the FileKeyValueArrayStore to delegate calls to.
+   * @param options the specifications for this FileKeyValueStore.
    */
-  public FileKeyValueStore(FileKeyValueArrayStore<K, V> store) {
-    mStore = store;
+  public FileKeyValueStore(Options<? extends Options<?>> options) {
+    setConf(options.getConfiguration());
+    setEnableDistributedCache(options.getUseDistributedCache());
+    setInputPaths(options.getInputPaths());
+    mDCachePrefix = "";
   }
 
   /** {@inheritDoc} */
   @Override
   public void setConf(Configuration conf) {
-    mStore.setConf(conf);
+    mConf = conf;
   }
 
   /** {@inheritDoc} */
   @Override
   public Configuration getConf() {
-    return mStore.getConf();
-  }
-
-  /**
-   * Gets the array store used to delegate calls to.
-   *
-   * @return the array store used to delegate calls to.
-   */
-  protected FileKeyValueArrayStore<K, V> getArrayStore() {
-    return mStore;
-  }
-
-  /**
-   * Sets the array store used to delegate calls to.
-   *
-   * @param store the array store used to delegate calls to.
-   */
-  protected void setArrayStore(FileKeyValueArrayStore<K, V> store) {
-    mStore = store;
+    return mConf;
   }
 
   /**
@@ -206,7 +242,7 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
    * @param path the path to the file or directory to load.
    */
   public void addInputPath(Path path) {
-    mStore.addInputPath(path);
+    mInputPaths.add(path);
   }
 
   /**
@@ -217,7 +253,8 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
    * @param path the path to the file or directory to load.
    */
   public void setInputPath(Path path) {
-    mStore.setInputPath(path);
+    mInputPaths.clear();
+    addInputPath(path);
   }
 
   /**
@@ -228,7 +265,7 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
    * @param paths the list of paths to files or directories to load.
    */
   public void setInputPaths(List<Path> paths) {
-    mStore.setInputPaths(paths);
+    mInputPaths = new ArrayList<Path>(paths);
   }
 
   /**
@@ -240,7 +277,72 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
    *     within this KeyValueStore.
    */
   public List<Path> getInputPaths() {
-    return mStore.getInputPaths();
+    return Collections.unmodifiableList(mInputPaths);
+  }
+
+  /**
+   * An aggregator for use with Lists.foldLeft() that expands a list of paths that
+   * may include directories to include only files; directories are expanded to multiple
+   * file entries that are the files in this directory.
+   */
+  private class DirExpandAggregator extends Lists.Aggregator<Path, List<Path>> {
+    // TODO(aaron): This class stands ready to be factored out to assist other places
+    // in Wibi where we need to expand a list of files, dirs and globs into just a list
+    // of files.
+
+    /** Last exception encountered during file stat lookups for the input paths. */
+    private IOException mLastExn;
+
+    /**
+     * For each input path, modify the 'outputs' list to include the path
+     * itself (if it is a file), or all the files in the directory (if it
+     * is a directory). Also expands globs with FileSystem.globStatus().
+     *
+     * @param inputPath the input path to expand.
+     * @param outputs list of output paths being accumulated.
+     * @return the 'outputs' list.
+     */
+    @Override
+    public List<Path> eval(Path inputPath, List<Path> outputs) {
+      try {
+        FileSystem fs = inputPath.getFileSystem(getConf());
+        FileStatus[] matches = fs.globStatus(inputPath);
+        if (null == matches) {
+          mLastExn = new IOException("No such input path: " + inputPath);
+        } else if (matches.length == 0) {
+          mLastExn = new IOException("Input pattern \"" + inputPath + "\" matches 0 files.");
+        } else {
+          for (FileStatus match : matches) {
+            if (match.isDir()) {
+              // Match all the files in this dir, except the "bonus" files generated by
+              // MapReduce.
+              for (FileStatus subFile : fs.listStatus(match.getPath(),
+                  new org.apache.hadoop.mapred.Utils.OutputFileUtils.OutputFilesFilter())) {
+                outputs.add(subFile.getPath());
+                LOG.debug("Added file: " + subFile.getPath());
+              }
+            } else {
+              // Just a file; add directly.
+              outputs.add(match.getPath());
+              LOG.debug("Added file: " + match.getPath());
+            }
+          }
+        }
+      } catch (IOException ioe) {
+        mLastExn = ioe;
+      }
+      return outputs;
+    }
+
+    /**
+     * Returns the last exception encountered during FS operation while expanding
+     * directories.
+     *
+     * @return the last exception encountered, or null if none was encountered.
+     */
+    private IOException getLastException() {
+      return mLastExn;
+    }
   }
 
   /**
@@ -255,7 +357,25 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
    *     FileSystem while expanding paths and globs.
    */
   public List<Path> getExpandedInputPaths() throws IOException {
-    return mStore.getExpandedInputPaths();
+    // If we've read a bunch of files from the DistributedCache's local dir,
+    // no further unglobbing is necessary. Just return the values.
+    if (!mDCachePrefix.isEmpty()) {
+      return Collections.unmodifiableList(mInputPaths);
+    }
+
+    // Otherwise, these are "raw" user inputs. Unglob and expand them.
+    DirExpandAggregator expander = new DirExpandAggregator();
+
+    List<Path> actualInputPaths = Lists.distinct(Lists.foldLeft(
+        new ArrayList<Path>(), mInputPaths, expander));
+
+    IOException savedException = expander.getLastException();
+    if (null != savedException) {
+      // Rethrow the saved exception from this context.
+      throw savedException;
+    }
+
+    return Collections.unmodifiableList(actualInputPaths);
   }
 
   /**
@@ -273,19 +393,123 @@ public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
    *     should be enabled.
    */
   public void setEnableDistributedCache(boolean enable) {
-    mStore.setEnableDistributedCache(enable);
+    mUseDCache = enable;
+  }
+
+  /**
+   * If the cache URI prefix is already set, return this value. Otherwise create
+   * a new unique cache URI prefix.
+   *
+   * @return the DistributedCache URI prefix for files used by this store.
+   */
+  private String getCachePrefix() {
+    if (mDCachePrefix.isEmpty()) {
+      // We need to put the files for this KVStore into the distributed cache. They
+      // should be given symlink names that do not conflict with the names associated
+      // with other KeyValueStores. Pick a symlink prefix that is unique to this store.
+      long prefixId = System.currentTimeMillis() ^ (((long) this.hashCode()) << 8);
+      StringBuilder sb = new StringBuilder();
+      Formatter formatter = new Formatter(sb, Locale.US);
+      formatter.format("%08x", prefixId);
+      String newPrefix = sb.toString();
+      LOG.debug("This KeyValueStore uses Distributed cache files in namespace: " + newPrefix);
+      return newPrefix;
+    } else {
+      return mDCachePrefix; // Prefix is already set.
+    }
   }
 
   /** {@inheritDoc} */
   @Override
   public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.storeToConf(conf);
+    if (mInputPaths.isEmpty()) {
+      throw new IOException("Required attribute not set: input path");
+    }
+
+    if (mUseDCache && !"local".equals(conf.get("mapred.job.tracker", ""))) {
+      // If we're scheduled to use the distributed cache, and we're not in the LocalJobRunner,
+      // add these files to the DistributedCache.
+
+      // TODO(aaron): This does not handle any sort of MapperTester, etc.
+      // We need a separate flag that tells this to ignore mUseDCache if we're in a test
+      // environment, and just use the original input file specs.
+      final String dCachePrefix = getCachePrefix();
+
+      // Associate this randomly chosen prefix id with this KVStore implementation.
+      conf.set(CONF_DCACHE_PREFIX_KEY, dCachePrefix);
+
+      // Add the input paths to the DistributedCache and translate path names.
+      int uniqueId = 0;
+      for (Path inputPath : getExpandedInputPaths()) {
+        FileSystem fs = inputPath.getFileSystem(conf.getDelegate());
+        Path absolutePath = inputPath.makeQualified(fs);
+        String uriStr = absolutePath.toString() + "#" + dCachePrefix + "-" + uniqueId;
+        LOG.debug("Adding to DistributedCache: " + uriStr);
+        uniqueId++;
+        try {
+          DistributedCache.addCacheFile(new URI(uriStr), conf.getDelegate());
+        } catch (URISyntaxException use) {
+          throw new IOException("Could not construct URI for file: " + uriStr, use);
+        }
+      }
+
+      // Ensure that symlinks are created for cached files.
+      DistributedCache.createSymlink(conf.getDelegate());
+
+      // Now save the cache prefix into the local state.  We couldn't set this earlier,
+      // because we wanted getExpandedInputPaths() to actually unglob things. That
+      // function will behave differently if mDCachePrefix is already initialized.
+      mDCachePrefix = dCachePrefix;
+    } else {
+      // Just put the regular HDFS paths in the Configuration.
+      conf.setStrings(CONF_PATHS_KEY,
+          Lists.toArray(Lists.map(mInputPaths, new Lists.ToStringFn<Path>()), String.class));
+    }
   }
 
   /** {@inheritDoc} */
   @Override
   public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.initFromConf(conf);
+    setConf(conf.getDelegate());
+    mDCachePrefix = conf.get(CONF_DCACHE_PREFIX_KEY, "");
+    LOG.debug("Input dCachePrefix: " + mDCachePrefix);
+    if (mDCachePrefix.isEmpty()) {
+      // Read an ordinary list of files from the Configuration.
+      // These may include directories and globs to expand.
+      mInputPaths = Lists.map(Arrays.asList(conf.getStrings(
+          CONF_PATHS_KEY, new String[0])),
+          new Lists.Func<String, Path>() {
+            @Override
+            public Path eval(String in) {
+              LOG.debug("File input: " + in);
+              return new Path(in);
+            }
+          });
+    } else {
+      // Use the dcache prefix to get the names of the files for this store.
+      // The symlinks are already present in the working dir of the task.
+      final FileSystem localFs = FileSystem.getLocal(conf.getDelegate());
+      FileStatus[] statuses = localFs.globStatus(new Path(mDCachePrefix + "-*"));
+      if (null == statuses || statuses.length == 0) {
+        throw new IOException("No files associated with the job in the DistributedCache");
+      }
+
+      // Get the (absolute) input file paths to use.
+      mInputPaths = Lists.map(Arrays.asList(statuses), new Lists.Func<FileStatus, Path>() {
+        @Override
+        public Path eval(FileStatus status) {
+          Path out = status.getPath().makeQualified(localFs);
+          LOG.debug("Loaded from DistributedCache: " + out);
+          return out;
+        }
+      });
+    }
+
+    // If we are initializing a client-side instance to later serialize, the user may have
+    // specified HDFS files, but also an intent to put the files in the DistributedCache. Set
+    // this flag now, which will generate mDCachePrefix when addToConfiguration() is called
+    // later.
+    mUseDCache = conf.getBoolean(CONF_USE_DCACHE_KEY, USE_DCACHE_DEFAULT);
   }
 }
 

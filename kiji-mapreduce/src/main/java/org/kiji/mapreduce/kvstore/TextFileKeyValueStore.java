@@ -19,12 +19,22 @@
 
 package org.kiji.mapreduce.kvstore;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.KeyValueStoreReader;
-import org.kiji.mapreduce.kvstore.TextFileKeyValueArrayStore.AbstractOptions;
 
 /**
  * KeyValueStore implementation that reads delimited records from text files.
@@ -72,7 +82,8 @@ import org.kiji.mapreduce.kvstore.TextFileKeyValueArrayStore.AbstractOptions;
 @ApiAudience.Public
 public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
 
-  private TextFileKeyValueArrayStore mStore;
+  /** The configuration variable for the delimiter. */
+  private static final String CONF_DELIMITER_KEY = "delim";
 
   /**
    * Records are tab-delimited by default, to be compatible with TextOutputFormat,
@@ -81,7 +92,37 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
   public static final String DEFAULT_DELIMITER = "\t";
 
   /** Class that represents the options available to configure a TextFileKeyValueStore. */
-  public static class Options extends AbstractOptions<Options> {}
+  public static class Options extends FileKeyValueStore.Options<Options> {
+    private String mDelim;
+
+    /** Default constructor. */
+    public Options() {
+      mDelim = DEFAULT_DELIMITER;
+    }
+
+    /**
+     * Specifies the delimiter between the key and the value on a line in the file.
+     *
+     * @param delim the delimiter string to use.
+     * @return this Options instance.
+     */
+    public Options withDelimiter(String delim) {
+      mDelim = delim;
+      return this;
+    }
+
+    /**
+     * Returns the delimiter string. This defaults to a tab character.
+     *
+     * @return the delimiter string.
+     */
+    public String getDelimiter() {
+      return mDelim;
+    }
+  }
+
+  /** The delimiter string to use. */
+  private String mDelim;
 
   /** Default constructor. Used only for reflection. */
   public TextFileKeyValueStore() {
@@ -94,26 +135,28 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
    * @param options the options that configure the file store.
    */
   public TextFileKeyValueStore(Options options) {
-    super(new TextFileKeyValueArrayStore(new TextFileKeyValueArrayStore.Options()
-    .withConfiguration(options.getConfiguration())
-    .withInputPaths(options.getInputPaths())
-    .withDistributedCache(options.getUseDistributedCache())
-    .withMaxValues(1)
-    .withDelimiter(options.getDelimiter())));
-
-    mStore = (TextFileKeyValueArrayStore) super.getArrayStore();
+    super(options);
+    setDelimiter(options.getDelimiter());
   }
 
   /** {@inheritDoc} */
   @Override
   public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.storeToConf(conf);
+    super.storeToConf(conf);
+
+    if (null == mDelim || mDelim.isEmpty()) {
+      throw new IOException("Cannot use empty delimiter");
+    }
+
+    conf.set(CONF_DELIMITER_KEY, mDelim);
   }
 
   /** {@inheritDoc} */
   @Override
   public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.initFromConf(conf);
+    super.initFromConf(conf);
+
+    mDelim = conf.get(CONF_DELIMITER_KEY, DEFAULT_DELIMITER);
   }
 
   /**
@@ -123,7 +166,11 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
    * @param delim the delimiter string to use.
    */
   public void setDelimiter(String delim) {
-    mStore.setDelimiter(delim);
+    if (null == delim || delim.isEmpty()) {
+      throw new IllegalArgumentException("Cannot use empty delimiter");
+    }
+
+    mDelim = delim;
   }
 
   /**
@@ -132,14 +179,13 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
    * @return the delimiter string.
    */
   public String getDelimiter() {
-    return mStore.getDelimiter();
+    return mDelim;
   }
 
   /** {@inheritDoc} */
   @Override
   public KeyValueStoreReader<String, String> open() throws IOException, InterruptedException {
-    return new Reader(new TextFileKeyValueArrayStore.Reader(
-        getConf(), getExpandedInputPaths(), getDelimiter(), 1));
+    return new Reader(getConf(), getExpandedInputPaths(), getDelimiter());
   }
 
   /**
@@ -152,15 +198,92 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
    * has value <i>K</i>.</p>
    */
-  private static class Reader extends AvroKVSingleValueReader<String, String> {
+  private static class Reader extends KeyValueStoreReader<String, String> {
+    /** A map from keys to values loaded from the input files. */
+    private Map<String, String> mMap;
+
+    /** The delimiter string. */
+    private final String mDelim;
+
     /**
-     * Constructs a key value reader over a Sequence file.
+     * Constructs a key value reader over a SequenceFile.
      *
-     * @param reader The array reader to use for reading from the file.
-     * @throws IOException If there is an error.
+     * @param conf The Hadoop configuration.
+     * @param paths The path to the Avro file(s).
+     * @param delim the delimeter string.
+     * @throws IOException If the seqfile cannot be read.
      */
-    public Reader(TextFileKeyValueArrayStore.Reader reader) throws IOException {
-      super(reader);
+    public Reader(Configuration conf, List<Path> paths, String delim) throws IOException {
+      if (null == delim || delim.isEmpty()) {
+        throw new IOException("Cannot use null/empty delimiter.");
+      }
+
+      mDelim = delim;
+      mMap = new TreeMap<String, String>();
+
+      for (Path path : paths) {
+        // Load the entire file into the lookup map.
+        FileSystem fs = path.getFileSystem(conf);
+        BufferedReader reader = null;
+        try {
+          reader = new BufferedReader(new InputStreamReader(fs.open(path), "UTF-8"));
+          String line = reader.readLine();
+          while (null != line) {
+            String key;
+            String val;
+            int delimPos = line.indexOf(mDelim);
+            if (-1 == delimPos) {
+              // No delimiter in the line.
+              key = line; // Whole line is the key.
+              val = null; // The value is null.
+            } else {
+              key = line.substring(0, delimPos);
+              val = line.substring(delimPos + mDelim.length());
+            }
+
+            if (!mMap.containsKey(key)) {
+              mMap.put(key, val);
+            }
+
+            line = reader.readLine();
+          }
+        } catch (UnsupportedEncodingException uee) {
+          // Can't open as UTF-8? Java is quite broken if we get here
+          throw new IOException(uee);
+        } finally {
+          IOUtils.closeQuietly(reader);
+        }
+      }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isOpen() {
+      return null != mMap;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String get(String key) throws IOException, InterruptedException {
+      if (!isOpen()) {
+        throw new IOException("Reader is closed");
+      }
+      return mMap.get(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean containsKey(String key) throws IOException, InterruptedException {
+      if (!isOpen()) {
+        throw new IOException("Reader is closed");
+      }
+      return mMap.containsKey(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void close() throws IOException {
+      mMap = null;
     }
   }
 }

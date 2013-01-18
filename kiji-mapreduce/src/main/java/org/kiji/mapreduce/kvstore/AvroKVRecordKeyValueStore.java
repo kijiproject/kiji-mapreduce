@@ -22,12 +22,12 @@ package org.kiji.mapreduce.kvstore;
 import java.io.IOException;
 
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.hadoop.io.AvroKeyValue;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.KeyValueStoreReader;
-import org.kiji.mapreduce.kvstore.AvroKVRecordKeyValueArrayStore.AbstractOptions;
 
 /**
  * An interface for providing read access to Avro container files of (key, value)
@@ -52,13 +52,34 @@ import org.kiji.mapreduce.kvstore.AvroKVRecordKeyValueArrayStore.AbstractOptions
 @ApiAudience.Public
 public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
   /** A wrapped store for looking up an Avro record by its 'key' field. */
-  private final AvroKVRecordKeyValueArrayStore<K, V> mStore;
+  private final AvroRecordKeyValueStore<K, GenericRecord> mStore;
 
   /**
-   * Abstract class that represents the options available to configure an
-   * AvroKVRecordKeyValueStore.
+   * An object to encapsulate the numerous options of an AvroKVRecordKeyValueStore.
    */
-  public static class Options extends AbstractOptions<Options> {}
+  public static class Options extends FileKeyValueStore.Options<Options> {
+    private Schema mReaderSchema;
+
+    /**
+     * Sets the schema to read the records with.
+     *
+     * @param schema The reader schema.
+     * @return This options instance.
+     */
+    public Options withReaderSchema(Schema schema) {
+      mReaderSchema = schema;
+      return this;
+    }
+
+    /**
+     * Gets the schema used to read the records.
+     *
+     * @return The Avro reader schema.
+     */
+    public Schema getReaderSchema() {
+      return mReaderSchema;
+    }
+  }
 
   /**
    * Constructs an AvroKVRecordKeyValueStore.
@@ -66,14 +87,13 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
    * @param options The options for configuring the store.
    */
   public AvroKVRecordKeyValueStore(Options options) {
-    super(new AvroKVRecordKeyValueArrayStore<K, V>(new AvroKVRecordKeyValueArrayStore.Options()
+    super(options);
+    mStore = new AvroRecordKeyValueStore<K, GenericRecord>(new AvroRecordKeyValueStore.Options()
         .withConfiguration(options.getConfiguration())
         .withInputPaths(options.getInputPaths())
         .withDistributedCache(options.getUseDistributedCache())
         .withReaderSchema(options.getReaderSchema())
-        .withMaxValues(1)
-        .withKeyFieldName(AvroKeyValue.KEY_FIELD)));
-    mStore = (AvroKVRecordKeyValueArrayStore<K, V>) this.getArrayStore();
+        .withKeyFieldName(AvroKeyValue.KEY_FIELD));
   }
 
   /**
@@ -99,7 +119,6 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
   @Override
   public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
     mStore.storeToConf(conf);
-    // Persist file-system state from our own configuration.
   }
 
   /** {@inheritDoc} */
@@ -115,26 +134,62 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
     // because setInputPaths(), etc. get called in our FileKeyValueStore's c'tor.
     // So make sure we use the right input paths that we were configured with.
     mStore.setInputPaths(getInputPaths());
-    return new Reader<K, V>(
-        new AvroKVRecordKeyValueArrayStore.Reader<K, V>(mStore.getStore()));
+    return new Reader<K, V>(mStore);
   }
 
   /**
    * Reads an entire Avro container file of (key, value) records into memory, indexed
    * by "key."
    *
-   * <p>Lookups for a key <i>K</i> will return the "value" field for the first record
+   * <p>Lookups for a key <i>K</i> will return the "value" field of the first record
    * in the file where the key field has value <i>K</i>.</p>
    */
-  static class Reader<K, V> extends AvroKVSingleValueReader<K, V> {
+  static class Reader<K, V> extends KeyValueStoreReader<K, V> {
+    /** A wrapped Avro store reader for looking up a record by its 'key' field. */
+    private final KeyValueStoreReader<K, GenericRecord> mReader;
+
     /**
      * Constructs a key value reader over an Avro file.
      *
-     * @param reader The array reader to use for reading from the file.
+     * @param store An Avro file store that uses the 'key' field as the key, and
+     *     the entire record as the value.
      * @throws IOException If there is an error.
+     * @throws InterruptedException If the thread is interrupted.
      */
-    public Reader(AvroKVRecordKeyValueArrayStore.Reader<K, V> reader) throws IOException {
-      super(reader);
+    public Reader(AvroRecordKeyValueStore<K, GenericRecord> store)
+        throws IOException, InterruptedException {
+      mReader = store.open();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isOpen() {
+      return mReader.isOpen();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @SuppressWarnings("unchecked")
+    public V get(K key) throws IOException, InterruptedException {
+      GenericRecord record = mReader.get(key);
+      if (null == record) {
+        // No match;
+        return null;
+      }
+
+      return (V) record.get(AvroKeyValue.VALUE_FIELD);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean containsKey(K key) throws IOException, InterruptedException {
+      return mReader.containsKey(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void close() throws IOException {
+      mReader.close();
     }
   }
 }

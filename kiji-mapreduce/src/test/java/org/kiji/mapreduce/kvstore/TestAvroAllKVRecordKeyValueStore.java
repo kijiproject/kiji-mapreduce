@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
@@ -97,22 +96,17 @@ public class TestAvroAllKVRecordKeyValueStore {
 
     // Open the store.
     Path avroFilePath = writeGenericRecordAvroFile();
-    AvroKVRecordKeyValueArrayStore<Integer, CharSequence> store
-        = new AvroKVRecordKeyValueArrayStore<Integer, CharSequence>(
-            new AvroKVRecordKeyValueArrayStore.Options()
+    AvroKVRecordKeyValueStore<Integer, CharSequence> store
+        = new AvroKVRecordKeyValueStore<Integer, CharSequence>(
+            new AvroKVRecordKeyValueStore.Options()
             .withConfiguration(new Configuration())
             .withInputPath(avroFilePath)
             .withReaderSchema(readerSchema));
-    KeyValueStoreReader<Integer, List<CharSequence>> reader = store.open();
+    KeyValueStoreReader<Integer, CharSequence> reader = store.open();
 
     assertTrue(reader.containsKey(1));
-    List<CharSequence> values = reader.get(1);
-    assertEquals(1, values.size());
-    assertEquals("one", values.get(0).toString());
+    assertEquals("one", reader.get(1).toString());
     assertTrue(reader.containsKey(2));
-    values = reader.get(2);
-    assertEquals(2, values.size());
-    assertEquals("two", values.get(0).toString());
-    assertEquals("deux", values.get(1).toString());
+    assertEquals("two", reader.get(2).toString()); // First field in wins.
   }
 }

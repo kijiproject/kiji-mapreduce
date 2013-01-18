@@ -20,14 +20,21 @@
 package org.kiji.mapreduce.kvstore;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileStream;
 import org.apache.avro.generic.IndexedRecord;
+import org.apache.avro.hadoop.util.AvroCharSequenceComparator;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.KeyValueStoreReader;
-import org.kiji.mapreduce.kvstore.AvroRecordKeyValueArrayStore.AbstractOptions;
 
 /**
  * An interface for providing read access to Avro container files of records.
@@ -55,13 +62,66 @@ import org.kiji.mapreduce.kvstore.AvroRecordKeyValueArrayStore.AbstractOptions;
 public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
     extends FileKeyValueStore<K, V> {
 
-  private AvroRecordKeyValueArrayStore<K, V> mStore;
+  /** The configuration variable for the Avro record reader schema. */
+  private static final String CONF_READER_SCHEMA_KEY = "avro.reader.schema";
+
+  /** The configuration variable for the name of the field to use as the lookup key. */
+  private static final String CONF_KEY_FIELD_KEY = "key.field";
+
+  /** The schema to use for reading the Avro records. */
+  private Schema mReaderSchema;
+
+  /** The name of the field to use as the lookup key for records. */
+  private String mKeyFieldName;
 
   /**
-   * Abstract class that represents the options available to configure an
-   * AvroRecordKeyValueStore.
+   * An object to encapsulate the numerous options of an AvroRecordKeyValueStore.
    */
-  public static class Options extends AbstractOptions<Options> {}
+  public static class Options extends FileKeyValueStore.Options<Options> {
+    private Schema mReaderSchema;
+    private String mKeyFieldName;
+
+    /**
+     * Sets the schema to read the records with.
+     *
+     * @param schema The reader schema.
+     * @return This options instance.
+     */
+    public Options withReaderSchema(Schema schema) {
+      mReaderSchema = schema;
+      return this;
+    }
+
+    /**
+     * Sets the name of the record field to use as the lookup key.
+     *
+     * @param keyFieldName The name of the key field.
+     * @return This options instance.
+     */
+    public Options withKeyFieldName(String keyFieldName) {
+      mKeyFieldName = keyFieldName;
+      return this;
+    }
+
+    /**
+     * Gets the schema used to read the records.
+     *
+     * @return The Avro reader schema.
+     */
+    public Schema getReaderSchema() {
+      return mReaderSchema;
+    }
+
+    /**
+     * Gets the name of the field to use as the lookup key.
+     *
+     * @return The key field name.
+     */
+    public String getKeyFieldName() {
+      return mKeyFieldName;
+    }
+  }
+
 
   /**
    * Constructs an AvroRecordKeyValueStore.
@@ -69,14 +129,10 @@ public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
    * @param options The options for configuring the store.
    */
   public AvroRecordKeyValueStore(Options options) {
-    super(new AvroRecordKeyValueArrayStore<K, V>(new AvroRecordKeyValueArrayStore.Options()
-    .withConfiguration(options.getConfiguration())
-    .withInputPaths(options.getInputPaths())
-    .withDistributedCache(options.getUseDistributedCache())
-    .withReaderSchema(options.getReaderSchema())
-    .withMaxValues(1)
-    .withKeyFieldName(options.getKeyFieldName())));
-    mStore = (AvroRecordKeyValueArrayStore<K, V>) super.getArrayStore();
+    super(options);
+    setConf(options.getConfiguration());
+    setReaderSchema(options.getReaderSchema());
+    setKeyFieldName(options.getKeyFieldName());
   }
 
   /**
@@ -94,7 +150,7 @@ public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
    * @param readerSchema The reader schema.
    */
   public void setReaderSchema(Schema readerSchema) {
-    mStore.setReaderSchema(readerSchema);
+    mReaderSchema = readerSchema;
   }
 
   /**
@@ -103,47 +159,168 @@ public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
    * @param keyFieldName The key field.
    */
   public void setKeyFieldName(String keyFieldName) {
-    mStore.setKeyFieldName(keyFieldName);
+    mKeyFieldName = keyFieldName;
   }
 
   /** {@inheritDoc} */
   @Override
   public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.storeToConf(conf, true);
+    storeToConf(conf, true);
+  }
+
+  /**
+   * Implements storeToConf() but optionally suppresses storing the actual
+   * FileSystem state associated with this KeyValueStore. This is used by the
+   * AvroKVRecordKeyValueStore when wrapping an instance of this KeyValueStore;
+   * the wrapper manages the file data, whereas this KeyValueStore persists only
+   * reader schema, key field, etc.
+   *
+   * @param conf the KeyValueStoreConfiguration to persist to.
+   * @param persistFsState true if the filenames, etc. associated with this store should
+   *     be written to the Configuration, false if this is externally managed.
+   * @throws IOException if there is an error communicating with the FileSystem.
+   */
+  void storeToConf(KeyValueStoreConfiguration conf, boolean persistFsState)
+      throws IOException {
+
+    if (persistFsState) {
+      super.storeToConf(conf);
+    }
+
+    if (null != mReaderSchema) {
+      conf.set(CONF_READER_SCHEMA_KEY, mReaderSchema.toString());
+    }
+
+    if (null == mKeyFieldName) {
+      throw new IOException("Required attribute not set: keyField");
+    }
+    conf.set(CONF_KEY_FIELD_KEY, mKeyFieldName);
   }
 
   /** {@inheritDoc} */
   @Override
   public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.initFromConf(conf);
+    super.initFromConf(conf);
+
+    String schema = conf.get(CONF_READER_SCHEMA_KEY);
+    if (null != schema) {
+      setReaderSchema(Schema.parse(schema));
+    }
+
+    setKeyFieldName(conf.get(CONF_KEY_FIELD_KEY));
   }
 
   /** {@inheritDoc} */
   @Override
   public KeyValueStoreReader<K, V> open() throws IOException, InterruptedException {
-    return new Reader<K, V>(new AvroRecordKeyValueArrayStore.Reader<K, V>(
-        getConf(), getExpandedInputPaths(), mStore.getReaderSchema(),
-        mStore.getKeyFieldName(), 1));
+    return new Reader<K, V>(getConf(), getExpandedInputPaths(), mReaderSchema, mKeyFieldName);
   }
 
   /**
-   * Reads an entire Avro container file of (key, value) records into memory, indexed
-   * by "key."
+   * Reads an entire Avro container file of records into memory, and indexes it by the key field.
    *
-   * <p>Lookups for a key <i>K</i> will return the first record
-   * in the file where the key field has value <i>K</i>.</p>
-   * @param <K> the key type expected to be implemented by the keys to this reader.
-   * @param <V> the value type expected to be accessed by keys in the reader.
+   * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
+   * has value <i>K</i>.</p>
    */
-  static class Reader<K, V extends IndexedRecord> extends AvroKVSingleValueReader<K, V> {
+  static class Reader<K, V extends IndexedRecord> extends KeyValueStoreReader<K, V> {
+    /** A map from key field to its corresponding record in the Avro container file. */
+    private Map<K, V> mMap;
+
     /**
-     * Constructs a key/record reader over an Avro file.
+     * Constructs a key value reader over an Avro file.
      *
-     * @param reader The array reader to use for reading from the file.
-     * @throws IOException If there is an error.
+     * @param conf The Hadoop configuration.
+     * @param paths The path to the Avro file(s).
+     * @param readerSchema The reader schema for the records within the Avro file.
+     * @param keyFieldName The name of the field within the record to use as the lookup key.
+     * @throws IOException If the Avro file cannot be read, or the key field is not found.
      */
-    public Reader(AvroRecordKeyValueArrayStore.Reader<K, V> reader) throws IOException {
-      super(reader);
+    public Reader(Configuration conf, List<Path> paths, Schema readerSchema, String keyFieldName)
+        throws IOException {
+      for (Path path : paths) {
+        // Load the entire Avro file into the lookup map.
+        DataFileStream<V> avroFileReader = null;
+        try {
+          avroFileReader = new DataFileStream<V>(path.getFileSystem(conf).open(path),
+              new SpecificDatumReader<V>(readerSchema));
+          if (null == readerSchema) {
+            // If the user has not specified a reader schema, grab the schema from the
+            // first file we encounter.
+            readerSchema = avroFileReader.getSchema();
+          }
+
+          // Check that the key field exists in the reader schema.
+          Schema.Field avroKeyField = readerSchema.getField(keyFieldName);
+          if (null == avroKeyField) {
+            throw new IOException("Key field " + keyFieldName
+                + " was not found in the record schema: " + readerSchema.toString());
+          }
+
+          if (null == mMap) {
+            // Set up the in-memory lookup map for Avro records.
+            if (avroKeyField.schema().equals(Schema.create(Schema.Type.STRING))) {
+              // Special case Avro string comparison, since we want to allow comparison of
+              // String objects with Utf8 objects.
+              mMap = new TreeMap<K, V>(new AvroCharSequenceComparator<K>());
+            } else {
+              mMap = new TreeMap<K, V>();
+            }
+          }
+
+          for (V record : avroFileReader) {
+            // Here, we read the value of the key field by looking it up by its record
+            // position (index).  In other words, to get the value of the 'key' field, we ask
+            // the Schema what position the 'key' field has, and use that position to get the
+            // value from the IndexedRecord.
+            //
+            // We have to do this because there is no common interface between GenericRecord
+            // and SpecificRecord that allows us to read fields by name.  The unit test seems
+            // to suggest that this approach works just fine, but if we find a bug later,
+            // the safe fix is to sacrifice the ability to read SpecificRecords -- all
+            // values of this store could just be GenericData.Record instances read by the
+            // GenericDatumReader.
+            @SuppressWarnings("unchecked")
+            K key = (K) record.get(avroKeyField.pos());
+            if (!mMap.containsKey(key)) {
+              mMap.put(key, record);
+            }
+          }
+        } finally {
+          if (null != avroFileReader) {
+            avroFileReader.close();
+          }
+        }
+      }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isOpen() {
+      return null != mMap;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public V get(K key) throws IOException, InterruptedException {
+      if (!isOpen()) {
+        throw new IOException("Reader is closed");
+      }
+      return mMap.get(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean containsKey(K key) throws IOException, InterruptedException {
+      if (!isOpen()) {
+        throw new IOException("Reader is closed");
+      }
+      return mMap.containsKey(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void close() throws IOException {
+      mMap = null;
     }
   }
 }

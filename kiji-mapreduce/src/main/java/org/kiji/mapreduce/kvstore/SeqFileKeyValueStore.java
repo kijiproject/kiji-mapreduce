@@ -20,11 +20,18 @@
 package org.kiji.mapreduce.kvstore;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.KeyValueStoreReader;
-import org.kiji.mapreduce.kvstore.SeqFileKeyValueArrayStore.AbstractOptions;
 
 /**
  * KeyValueStore implementation that reads records from SequenceFiles.
@@ -39,10 +46,15 @@ import org.kiji.mapreduce.kvstore.SeqFileKeyValueArrayStore.AbstractOptions;
 @ApiAudience.Public
 public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
 
-  private SeqFileKeyValueArrayStore<K, V> mStore;
-
   /** Class that represents the options available to configure a SeqFileKeyValueStore. */
-  public static class Options extends AbstractOptions<Options> {}
+  public static class Options extends FileKeyValueStore.Options<Options> {
+    // This is currently empty; placeholder for future SeqFileKeyValueStore-specific
+    // options. Right now, everything we need can be handled by the FileKeyValueStore.Options.
+
+    /** Default constructor. */
+    public Options() {
+    }
+  }
 
   /** Default constructor. Used only for reflection. */
   public SeqFileKeyValueStore() {
@@ -54,51 +66,95 @@ public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
    *
    * @param options the options that configure the file store.
    */
-  @SuppressWarnings("rawtypes")
   public SeqFileKeyValueStore(Options options) {
-    super(new SeqFileKeyValueArrayStore<K, V>(new SeqFileKeyValueArrayStore.Options()
-    .withConfiguration(options.getConfiguration())
-    .withInputPaths(options.getInputPaths())
-    .withMaxValues(1)
-    .withDistributedCache(options.getUseDistributedCache())));
-    mStore = (SeqFileKeyValueArrayStore<K, V>) super.getArrayStore();
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.storeToConf(conf);
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
-    mStore.initFromConf(conf);
+    super(options);
   }
 
   /** {@inheritDoc} */
   @Override
   public KeyValueStoreReader<K, V> open() throws IOException, InterruptedException {
-    return new Reader(new SeqFileKeyValueArrayStore.Reader<K, V>(
-        getConf(), getExpandedInputPaths(), 1));
+    return new Reader(getConf(), getExpandedInputPaths());
   }
 
   /**
-   * Reads an entire Sequence file into memory, indexed
-   * by "key."
+   * Reads an entire SequenceFile of records into memory, and indexes it by the key field.
    *
-   * <p>Lookups for a key <i>K</i> will return the "value" field for the first record
-   * in the file where the key field has value <i>K</i>.</p>
+   * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
+   * has value <i>K</i>.</p>
    */
-  private class Reader extends AvroKVSingleValueReader<K, V> {
+  private class Reader extends KeyValueStoreReader<K, V> {
+    /** A map from key field to its corresponding value in the SequenceFile. */
+    private Map<K, V> mMap;
+
     /**
-     * Constructs a key value reader over a Sequence file.
+     * Constructs a key value reader over a SequenceFile.
      *
-     * @param reader The array reader to use for reading from the file.
-     * @throws IOException If there is an error.
+     * @param conf The Hadoop configuration.
+     * @param paths The path to the Avro file(s).
+     * @throws IOException If the seqfile cannot be read.
      */
-    public Reader(SeqFileKeyValueArrayStore.Reader<K, V> reader) throws IOException {
-      super(reader);
+    @SuppressWarnings("unchecked")
+    public Reader(Configuration conf, List<Path> paths) throws IOException {
+      mMap = new TreeMap<K, V>();
+
+      for (Path path : paths) {
+        // Load the entire SequenceFile into the lookup map.
+        FileSystem fs = path.getFileSystem(conf);
+        SequenceFile.Reader seqReader = new SequenceFile.Reader(fs, path, conf);
+        try {
+          Class<? extends K> keyClass = (Class<? extends K>) seqReader.getKeyClass();
+          Class<? extends V> valClass = (Class<? extends V>) seqReader.getValueClass();
+          K key = ReflectionUtils.newInstance(keyClass, conf);
+          V val = ReflectionUtils.newInstance(valClass, conf);
+
+          key = (K) seqReader.next(key);
+          while (key != null) {
+            val = (V) seqReader.getCurrentValue(val);
+            if (!mMap.containsKey(key)) {
+              mMap.put(key, val);
+            }
+
+            // Get new instances of key and val to populate.
+            key = ReflectionUtils.newInstance(keyClass, conf);
+            val = ReflectionUtils.newInstance(valClass, conf);
+
+            // Load the next key; returns null if we're out of file.
+            key = (K) seqReader.next(key);
+          }
+        } finally {
+          seqReader.close();
+        }
+      }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isOpen() {
+      return null != mMap;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public V get(K key) throws IOException, InterruptedException {
+      if (!isOpen()) {
+        throw new IOException("Reader is closed");
+      }
+      return mMap.get(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean containsKey(K key) throws IOException, InterruptedException {
+      if (!isOpen()) {
+        throw new IOException("Reader is closed");
+      }
+      return mMap.containsKey(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void close() throws IOException {
+      mMap = null;
     }
   }
 }

@@ -21,6 +21,7 @@ package org.kiji.mapreduce;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -162,6 +163,15 @@ public class TestKijiTransformJobBuilder {
         .withOutput(new TextMapReduceJobOutput(new Path("/path/to/my/output"), 16))
         .withStoreBindings(xmlStores);
     xmlStores.close();
+
+    // This file needs to exist before we build the job, or else
+    // we can't build the job; it's referenced by a key-value store that checks
+    // for its presence.
+    File tmpFile = new File("/tmp/foo.seq");
+    if (tmpFile.createNewFile()) {
+      // We created this temp file, we're responsible for deleting it.
+      tmpFile.deleteOnExit();
+    }
 
     LOG.info("Building job...");
     MapReduceJob job = builder.build();
