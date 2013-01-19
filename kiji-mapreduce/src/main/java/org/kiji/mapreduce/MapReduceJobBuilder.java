@@ -45,7 +45,8 @@ import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
-import org.kiji.mapreduce.kvstore.XmlKeyValueStoreParser;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
+import org.kiji.mapreduce.kvstore.impl.XmlKeyValueStoreParser;
 import org.kiji.mapreduce.util.AvroMapReduce;
 import org.kiji.mapreduce.util.Jars;
 import org.kiji.schema.Kiji;

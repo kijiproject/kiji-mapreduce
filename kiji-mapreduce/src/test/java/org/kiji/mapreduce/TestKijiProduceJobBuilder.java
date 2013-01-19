@@ -37,9 +37,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import org.kiji.mapreduce.kvstore.EmptyKeyValueStore;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.RequiredStores;
-import org.kiji.mapreduce.kvstore.UnconfiguredKeyValueStore;
+import org.kiji.mapreduce.kvstore.lib.EmptyKeyValueStore;
+import org.kiji.mapreduce.kvstore.lib.UnconfiguredKeyValueStore;
 import org.kiji.mapreduce.mapper.ProduceMapper;
 import org.kiji.mapreduce.output.HFileMapReduceJobOutput;
 import org.kiji.mapreduce.output.KijiHFileOutputFormat;

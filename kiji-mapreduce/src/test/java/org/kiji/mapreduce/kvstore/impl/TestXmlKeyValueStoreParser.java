@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce;
+package org.kiji.mapreduce.kvstore.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -33,9 +33,9 @@ import java.util.Map;
 import org.apache.hadoop.fs.Path;
 import org.junit.Test;
 
-import org.kiji.mapreduce.kvstore.EmptyKeyValueStore;
-import org.kiji.mapreduce.kvstore.SeqFileKeyValueStore;
-import org.kiji.mapreduce.kvstore.XmlKeyValueStoreParser;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
+import org.kiji.mapreduce.kvstore.lib.EmptyKeyValueStore;
+import org.kiji.mapreduce.kvstore.lib.SeqFileKeyValueStore;
 
 public class TestXmlKeyValueStoreParser {
   /**

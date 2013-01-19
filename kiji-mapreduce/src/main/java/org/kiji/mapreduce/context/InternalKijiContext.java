@@ -24,9 +24,9 @@ import java.io.IOException;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KeyValueStoreReader;
-import org.kiji.mapreduce.KeyValueStoreReaderFactory;
 import org.kiji.mapreduce.KijiContext;
+import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
+import org.kiji.mapreduce.kvstore.KeyValueStoreReaderFactory;
 
 /** Implements KijiContext. */
 @ApiAudience.Private

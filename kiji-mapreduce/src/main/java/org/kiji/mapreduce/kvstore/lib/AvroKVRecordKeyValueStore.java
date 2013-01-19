@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.kvstore;
+package org.kiji.mapreduce.kvstore.lib;
 
 import java.io.IOException;
 
@@ -26,8 +26,8 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.hadoop.io.AvroKeyValue;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KeyValueStoreConfiguration;
-import org.kiji.mapreduce.KeyValueStoreReader;
+import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
 
 /**
  * An interface for providing read access to Avro container files of (key, value)

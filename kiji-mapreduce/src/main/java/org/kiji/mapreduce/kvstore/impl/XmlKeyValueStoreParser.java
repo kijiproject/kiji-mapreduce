@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.kvstore;
+package org.kiji.mapreduce.kvstore.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -48,8 +48,9 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KeyValueStore;
-import org.kiji.mapreduce.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
+import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.kvstore.lib.FileKeyValueStore;
 
 /**
  * Utility that parses an XML file that specifies KeyValueStore implementations
@@ -121,6 +122,7 @@ public class XmlKeyValueStoreParser {
           // TODO(KIJI-364): Make this compatible with user-written kvstores that live
           // in the default package. (Maybe try instantiating them first?)
           if (!storeClassStr.contains(".")) {
+            // TODO: Make this a sane integration when these classes move to kiji-mr-lib
             storeClassStr = FileKeyValueStore.class.getPackage().getName()
                 + "." + storeClassStr;
           }

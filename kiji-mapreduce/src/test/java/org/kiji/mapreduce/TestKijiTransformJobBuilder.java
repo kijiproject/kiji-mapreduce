@@ -39,9 +39,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.mapreduce.input.TextMapReduceJobInput;
-import org.kiji.mapreduce.kvstore.EmptyKeyValueStore;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
+import org.kiji.mapreduce.kvstore.KeyValueStoreClient;
 import org.kiji.mapreduce.kvstore.RequiredStores;
-import org.kiji.mapreduce.kvstore.SeqFileKeyValueStore;
+import org.kiji.mapreduce.kvstore.lib.EmptyKeyValueStore;
+import org.kiji.mapreduce.kvstore.lib.SeqFileKeyValueStore;
 import org.kiji.mapreduce.output.TextMapReduceJobOutput;
 import org.kiji.schema.KijiConfiguration;
 import org.kiji.schema.util.Resources;

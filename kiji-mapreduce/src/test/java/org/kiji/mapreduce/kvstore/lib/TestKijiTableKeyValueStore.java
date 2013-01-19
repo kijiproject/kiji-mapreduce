@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.kvstore;
+package org.kiji.mapreduce.kvstore.lib;
 
 import static org.junit.Assert.assertEquals;
 
@@ -27,8 +27,8 @@ import org.apache.avro.Schema;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
-import org.kiji.mapreduce.KeyValueStore;
-import org.kiji.mapreduce.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
+import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.schema.KijiColumnName;
 
 public class TestKijiTableKeyValueStore {

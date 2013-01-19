@@ -17,5 +17,24 @@
  * limitations under the License.
  */
 
-/** Key-value store APIs. */
 package org.kiji.mapreduce.kvstore;
+
+import static org.junit.Assert.assertEquals;
+
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Test;
+
+public class TestKeyValueStoreConfiguration {
+  @Test
+  public void testCopyFromConfiguration() {
+    Configuration conf = new Configuration(false);
+    conf.set("foo", "foo-value");
+    conf.setInt("bar", 123);
+    conf.setClass("qaz", String.class, Object.class);
+
+    KeyValueStoreConfiguration kvStoreConf = KeyValueStoreConfiguration.fromConf(conf);
+    assertEquals("foo-value", kvStoreConf.get("foo"));
+    assertEquals(123, kvStoreConf.getInt("bar", 0));
+    assertEquals(String.class, kvStoreConf.getClass("qaz", null));
+  }
+}

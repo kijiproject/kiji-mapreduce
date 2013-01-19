@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce;
+package org.kiji.mapreduce.kvstore;
 
 import java.io.IOException;
 import java.util.Map;
@@ -29,7 +29,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.kvstore.XmlKeyValueStoreParser;
+import org.kiji.mapreduce.kvstore.impl.XmlKeyValueStoreParser;
 
 /**
  * <p>A KeyValueStore specifies all the resources needed to surface
@@ -182,7 +182,6 @@ public abstract class KeyValueStore<K, V> {
       throw new IOException("Unrecognized XML schema for store " + storeName
           + "; expected <configuration> element.");
     } else {
-      assert null != configurationNode;
       assert numRealChildren == 1;
       // Configure the store by parsing the <configuration> element.
       KeyValueStoreConfiguration conf = new XmlKeyValueStoreParser()

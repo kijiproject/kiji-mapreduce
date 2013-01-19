@@ -17,5 +17,5 @@
  * limitations under the License.
  */
 
-/** Key-value store APIs. */
-package org.kiji.mapreduce.kvstore;
+/** Key-value store implementations. */
+package org.kiji.mapreduce.kvstore.lib;

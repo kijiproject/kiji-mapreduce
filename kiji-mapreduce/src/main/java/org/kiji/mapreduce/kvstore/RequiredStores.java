@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KeyValueStore;
 
 /**
  * Convenient methods for assembling maps from names to KeyValueStore

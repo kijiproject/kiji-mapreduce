@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.kvstore;
+package org.kiji.mapreduce.kvstore.lib;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,10 +27,10 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KeyValueStore;
-import org.kiji.mapreduce.KeyValueStoreConfiguration;
-import org.kiji.mapreduce.KeyValueStoreReader;
 import org.kiji.mapreduce.KijiMapReduceJob;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
+import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
 import org.kiji.mapreduce.util.LruCache;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.Kiji;

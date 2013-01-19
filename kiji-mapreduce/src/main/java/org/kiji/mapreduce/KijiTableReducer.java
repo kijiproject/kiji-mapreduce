@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
+import org.kiji.mapreduce.kvstore.KeyValueStoreReaderFactory;
 
 /**
  * Base class for reducers that emit to a Kiji table.
