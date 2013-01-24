@@ -139,9 +139,8 @@ public class TestBulkImporter {
       final EntityId eid = row.getEntityId();
       final String rowId = Bytes.toString(eid.getKijiRowKey());
       final String cellContent = row.getMostRecentValue("primitives", "string").toString();
-      LOG.info(String.format(
-          "Row: '%s', primitives.string: '%s', primitives.long: %d",
-          rowId, cellContent, row.getMostRecentValue("primitives", "long")));
+      LOG.info("Row: {}, primitives.string: {}, primitives.long: {}",
+          rowId, cellContent, row.getMostRecentValue("primitives", "long"));
       if (rowId.equals("row1")) {
         assertEquals("Marsellus Wallace", cellContent);
       } else if (rowId.equals("row2")) {

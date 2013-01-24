@@ -165,7 +165,7 @@ public class TestTransform {
     for (KijiRowData row : scanner) {
       final EntityId eid = row.getEntityId();
       final String userId = Bytes.toString(eid.getKijiRowKey());
-      LOG.info(String.format("Row: %s", userId));
+      LOG.info("Row: {}", userId);
       if (!userId.startsWith("generated row for ")) {
         assertEquals(userId, String.format("%s %s",
             row.getMostRecentValue("info", "first_name"),
