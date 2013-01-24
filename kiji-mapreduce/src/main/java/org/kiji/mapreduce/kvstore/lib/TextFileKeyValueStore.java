@@ -184,7 +184,7 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
 
   /** {@inheritDoc} */
   @Override
-  public KeyValueStoreReader<String, String> open() throws IOException, InterruptedException {
+  public KeyValueStoreReader<String, String> open() throws IOException {
     return new Reader(getConf(), getExpandedInputPaths(), getDelimiter());
   }
 
@@ -198,7 +198,7 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
    * has value <i>K</i>.</p>
    */
-  private static class Reader extends KeyValueStoreReader<String, String> {
+  private static class Reader implements KeyValueStoreReader<String, String> {
     /** A map from keys to values loaded from the input files. */
     private Map<String, String> mMap;
 
@@ -264,7 +264,7 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
 
     /** {@inheritDoc} */
     @Override
-    public String get(String key) throws IOException, InterruptedException {
+    public String get(String key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Reader is closed");
       }
@@ -273,7 +273,7 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
 
     /** {@inheritDoc} */
     @Override
-    public boolean containsKey(String key) throws IOException, InterruptedException {
+    public boolean containsKey(String key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Reader is closed");
       }

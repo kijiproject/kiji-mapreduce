@@ -31,7 +31,7 @@ import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
  * @param <V> the value type for the store.
  */
 @ApiAudience.Public
-public class EmptyKeyValueStore<K, V> extends KeyValueStore<K, V> {
+public class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
   /** The single reader instance to return for all calls to open(). */
   private final EmptyKeyValueReader mReaderInstance;
 
@@ -85,7 +85,7 @@ public class EmptyKeyValueStore<K, V> extends KeyValueStore<K, V> {
    * @param K the key type to accept.
    * @param V the value type to return (in practice, all values will be null).
    */
-  private final class EmptyKeyValueReader extends KeyValueStoreReader<K, V> {
+  private final class EmptyKeyValueReader implements KeyValueStoreReader<K, V> {
     /** Construct the EmptyKeyValueReader. */
     private EmptyKeyValueReader() {
     }
@@ -94,6 +94,11 @@ public class EmptyKeyValueStore<K, V> extends KeyValueStore<K, V> {
     @Override
     public boolean isOpen() {
       return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void close() {
     }
 
     /** {@inheritDoc} */

@@ -41,7 +41,9 @@ import org.slf4j.LoggerFactory;
 import org.kiji.mapreduce.input.TextMapReduceJobInput;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreClient;
+import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.kvstore.RequiredStores;
+import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
 import org.kiji.mapreduce.kvstore.lib.EmptyKeyValueStore;
 import org.kiji.mapreduce.kvstore.lib.SeqFileKeyValueStore;
 import org.kiji.mapreduce.output.TextMapReduceJobOutput;
@@ -141,15 +143,19 @@ public class TestKijiTransformJobBuilder {
 
     // KeyValueStore-specific checks here.
     Configuration confOut = hadoopJob.getConfiguration();
-    assertEquals(2, confOut.getInt(KeyValueStore.CONF_KEY_VALUE_STORE_COUNT, 0));
+    assertEquals(2, confOut.getInt(KeyValueStoreConfigSerializer.CONF_KEY_VALUE_STORE_COUNT, 0));
     assertEquals(EmptyKeyValueStore.class.getName(),
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "0.class"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "0."
+        + KeyValueStoreConfigSerializer.CONF_CLASS));
     assertEquals("mapperMap",
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "0.name"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "0."
+        + KeyValueStoreConfigSerializer.CONF_NAME));
     assertEquals(EmptyKeyValueStore.class.getName(),
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "1.class"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "1."
+        + KeyValueStoreConfigSerializer.CONF_CLASS));
     assertEquals("reducerMap",
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "1.name"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "1."
+        + KeyValueStoreConfigSerializer.CONF_NAME));
   }
 
   @Test
@@ -189,15 +195,19 @@ public class TestKijiTransformJobBuilder {
     // KeyValueStore-specific checks here.
     // We override mapperMap with a SeqFileKeyValueStore.
     Configuration confOut = hadoopJob.getConfiguration();
-    assertEquals(2, confOut.getInt(KeyValueStore.CONF_KEY_VALUE_STORE_COUNT, 0));
+    assertEquals(2, confOut.getInt(KeyValueStoreConfigSerializer.CONF_KEY_VALUE_STORE_COUNT, 0));
     assertEquals(SeqFileKeyValueStore.class.getName(),
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "0.class"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "0."
+        + KeyValueStoreConfigSerializer.CONF_CLASS));
     assertEquals("mapperMap",
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "0.name"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "0."
+        + KeyValueStoreConfigSerializer.CONF_NAME));
     assertEquals(EmptyKeyValueStore.class.getName(),
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "1.class"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "1."
+        + KeyValueStoreConfigSerializer.CONF_CLASS));
     assertEquals("reducerMap",
-        confOut.get(KeyValueStore.CONF_KEY_VALUE_BASE + "1.name"));
+        confOut.get(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE + "1."
+        + KeyValueStoreConfigSerializer.CONF_NAME));
   }
 
   @Test(expected=JobConfigurationException.class)

@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
 
 /**
  * Class that manages the creation of KeyValueStoreReaders associated
@@ -42,7 +43,7 @@ import org.kiji.annotations.ApiAudience;
  * store.</p>
  */
 @ApiAudience.Private
-public class KeyValueStoreReaderFactory implements Closeable {
+public final class KeyValueStoreReaderFactory implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(
       KeyValueStoreReaderFactory.class.getName());
 
@@ -78,15 +79,16 @@ public class KeyValueStoreReaderFactory implements Closeable {
    */
   public KeyValueStoreReaderFactory(Configuration conf) throws IOException {
     Map<String, KeyValueStore<?, ?>> keyValueStores = new HashMap<String, KeyValueStore<?, ?>>();
-    int numKvStores = conf.getInt(KeyValueStore.CONF_KEY_VALUE_STORE_COUNT,
-        KeyValueStore.DEFAULT_KEY_VALUE_STORE_COUNT);
+    int numKvStores = conf.getInt(KeyValueStoreConfigSerializer.CONF_KEY_VALUE_STORE_COUNT,
+        KeyValueStoreConfigSerializer.DEFAULT_KEY_VALUE_STORE_COUNT);
     for (int i = 0; i < numKvStores; i++) {
       KeyValueStoreConfiguration kvStoreConf = new KeyValueStoreConfiguration(conf, i);
 
       Class<? extends KeyValueStore> kvStoreClass = kvStoreConf
-          .<KeyValueStore>getClass(KeyValueStore.CONF_CLASS, null, KeyValueStore.class);
+          .<KeyValueStore>getClass(KeyValueStoreConfigSerializer.CONF_CLASS,
+          null, KeyValueStore.class);
 
-      String kvStoreName = kvStoreConf.get(KeyValueStore.CONF_NAME, "");
+      String kvStoreName = kvStoreConf.get(KeyValueStoreConfigSerializer.CONF_NAME, "");
 
       if (null != kvStoreClass) {
         KeyValueStore<?, ?> kvStore = ReflectionUtils.newInstance(kvStoreClass, conf);
@@ -131,12 +133,10 @@ public class KeyValueStoreReaderFactory implements Closeable {
    * @return A KeyValueStoreReader associated with this storeName, or null
    *     if there is no such KeyValueStore available.
    * @throws IOException if there is an error opening the underlying storage resource.
-   * @throws InterruptedException if there is an interruption while connecting to
-   *     the underlying storage resource.
    */
   @SuppressWarnings("unchecked")
   public <K, V> KeyValueStoreReader<K, V> getStore(String storeName)
-      throws IOException, InterruptedException {
+      throws IOException {
     assert null != mStoreReaders && null != mKeyValueStores;
     if (null == mStoreReaders.get(storeName) || !mStoreReaders.get(storeName).isOpen()) {
       // In the first case, add a store because none existed before,

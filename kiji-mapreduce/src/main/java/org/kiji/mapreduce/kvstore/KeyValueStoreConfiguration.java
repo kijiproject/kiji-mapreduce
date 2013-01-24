@@ -27,16 +27,13 @@ import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.context.NamespaceConfiguration;
 
 /** Used to serialize KeyValueStore information into a unique namespace. */
-@ApiAudience.Private
-public class KeyValueStoreConfiguration extends NamespaceConfiguration {
+@ApiAudience.Framework
+public final class KeyValueStoreConfiguration extends NamespaceConfiguration {
   /**
    * KeyValueStore definitions are serialized to the Configuration as a set of
-   * keys under the "kiji.produce.kvstore.[i]" namespace.
+   * keys under the "kiji.kvstores.[i]" namespace.
    */
-  // TODO(WIBI-1636): This is no longer a produce-specific variable,
-  // so the namespacing should happen in "kiji.kvstore" instead.
-  // Will this break existing jobs?  I don't think so, but I should think about it first.
-  private static final String KEY_VALUE_STORE_NAMESPACE = "kiji.produce.kvstore.";
+  public static final String KEY_VALUE_STORE_NAMESPACE = "kiji.job.kvstores.";
 
   /**
    * Factory method to copy a Configuration into a KeyValueStoreConfiguration.
@@ -60,7 +57,7 @@ public class KeyValueStoreConfiguration extends NamespaceConfiguration {
   }
 
   /**
-   * Creates a KeyValueStoreConfiguratoin that writes to the <code>storeIndex</code>th
+   * Creates a KeyValueStoreConfiguration that writes to the <code>storeIndex</code>th
    * KeyValueStore namespace.
    *
    * @param parent The parent Configuration to back data.

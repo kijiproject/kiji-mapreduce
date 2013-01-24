@@ -73,7 +73,7 @@ import org.kiji.schema.KijiTableReader;
  * @param <V> the value type returned by this key-value store.
  */
 @ApiAudience.Public
-public class KijiTableKeyValueStore<V> extends KeyValueStore<String, V> implements Configurable {
+public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<String, V> {
   // TODO(WIBI-1652): Add a flag that allows users to specify hex-strings (pre-hashed entity ids)
   // as keys instead of "vanilla" key strings.
 
@@ -248,7 +248,7 @@ public class KijiTableKeyValueStore<V> extends KeyValueStore<String, V> implemen
 
   /** {@inheritDoc} */
   @Override
-  public KeyValueStoreReader<String, V> open() throws IOException, InterruptedException {
+  public KeyValueStoreReader<String, V> open() throws IOException {
     return new TableKVReader();
   }
 
@@ -310,7 +310,7 @@ public class KijiTableKeyValueStore<V> extends KeyValueStore<String, V> implemen
   }
 
   /** KeyValueStoreReader implementation that reads from a Kiji table. */
-  private final class TableKVReader extends KeyValueStoreReader<String, V> {
+  private final class TableKVReader implements KeyValueStoreReader<String, V> {
     /** Kiji instance to use. */
     private Kiji mKiji;
     /** Kiji Table instance to open. */
@@ -354,7 +354,7 @@ public class KijiTableKeyValueStore<V> extends KeyValueStore<String, V> implemen
 
     /** {@inheritDoc} */
     @Override
-    public V get(String key) throws IOException, InterruptedException {
+    public V get(String key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Closed");
       }
@@ -390,7 +390,7 @@ public class KijiTableKeyValueStore<V> extends KeyValueStore<String, V> implemen
 
     /** {@inheritDoc} */
     @Override
-    public boolean containsKey(String key) throws IOException, InterruptedException {
+    public boolean containsKey(String key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Closed");
       }

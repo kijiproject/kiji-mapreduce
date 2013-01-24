@@ -129,7 +129,7 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
 
   /** {@inheritDoc} */
   @Override
-  public KeyValueStoreReader<K, V> open() throws IOException, InterruptedException {
+  public KeyValueStoreReader<K, V> open() throws IOException {
     // Delay mStore's input path configuration until here,
     // because setInputPaths(), etc. get called in our FileKeyValueStore's c'tor.
     // So make sure we use the right input paths that we were configured with.
@@ -144,7 +144,7 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
    * <p>Lookups for a key <i>K</i> will return the "value" field of the first record
    * in the file where the key field has value <i>K</i>.</p>
    */
-  static class Reader<K, V> extends KeyValueStoreReader<K, V> {
+  static class Reader<K, V> implements KeyValueStoreReader<K, V> {
     /** A wrapped Avro store reader for looking up a record by its 'key' field. */
     private final KeyValueStoreReader<K, GenericRecord> mReader;
 
@@ -154,10 +154,8 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
      * @param store An Avro file store that uses the 'key' field as the key, and
      *     the entire record as the value.
      * @throws IOException If there is an error.
-     * @throws InterruptedException If the thread is interrupted.
      */
-    public Reader(AvroRecordKeyValueStore<K, GenericRecord> store)
-        throws IOException, InterruptedException {
+    public Reader(AvroRecordKeyValueStore<K, GenericRecord> store) throws IOException {
       mReader = store.open();
     }
 
@@ -170,7 +168,7 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
     /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
-    public V get(K key) throws IOException, InterruptedException {
+    public V get(K key) throws IOException {
       GenericRecord record = mReader.get(key);
       if (null == record) {
         // No match;
@@ -182,7 +180,7 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
 
     /** {@inheritDoc} */
     @Override
-    public boolean containsKey(K key) throws IOException, InterruptedException {
+    public boolean containsKey(K key) throws IOException {
       return mReader.containsKey(key);
     }
 

@@ -62,8 +62,8 @@ import org.kiji.mapreduce.util.Lists;
  * @param <V> the value type expected to be accessed by keys to this store.
  */
 @ApiAudience.Public
-public abstract class FileKeyValueStore<K, V> extends KeyValueStore<K, V>
-    implements Configurable {
+public abstract class FileKeyValueStore<K, V>
+    implements Configurable, KeyValueStore<K, V> {
 
   private static final Logger LOG = LoggerFactory.getLogger(
       FileKeyValueStore.class.getName());

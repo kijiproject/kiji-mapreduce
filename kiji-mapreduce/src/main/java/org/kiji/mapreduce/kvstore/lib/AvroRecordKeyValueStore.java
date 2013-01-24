@@ -212,7 +212,7 @@ public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
 
   /** {@inheritDoc} */
   @Override
-  public KeyValueStoreReader<K, V> open() throws IOException, InterruptedException {
+  public KeyValueStoreReader<K, V> open() throws IOException {
     return new Reader<K, V>(getConf(), getExpandedInputPaths(), mReaderSchema, mKeyFieldName);
   }
 
@@ -222,7 +222,7 @@ public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
    * has value <i>K</i>.</p>
    */
-  static class Reader<K, V extends IndexedRecord> extends KeyValueStoreReader<K, V> {
+  static class Reader<K, V extends IndexedRecord> implements KeyValueStoreReader<K, V> {
     /** A map from key field to its corresponding record in the Avro container file. */
     private Map<K, V> mMap;
 
@@ -301,7 +301,7 @@ public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
 
     /** {@inheritDoc} */
     @Override
-    public V get(K key) throws IOException, InterruptedException {
+    public V get(K key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Reader is closed");
       }
@@ -310,7 +310,7 @@ public class AvroRecordKeyValueStore<K, V extends IndexedRecord>
 
     /** {@inheritDoc} */
     @Override
-    public boolean containsKey(K key) throws IOException, InterruptedException {
+    public boolean containsKey(K key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Reader is closed");
       }

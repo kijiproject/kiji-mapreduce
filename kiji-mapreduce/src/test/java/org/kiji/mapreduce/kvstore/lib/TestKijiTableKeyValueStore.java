@@ -27,8 +27,8 @@ import org.apache.avro.Schema;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
-import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
 import org.kiji.schema.KijiColumnName;
 
 public class TestKijiTableKeyValueStore {
@@ -72,7 +72,7 @@ public class TestKijiTableKeyValueStore {
         new Configuration(false));
 
     input.storeToConf(conf);
-    conf.set(KeyValueStore.CONF_NAME, "the-store-name");
+    conf.set(KeyValueStoreConfigSerializer.CONF_NAME, "the-store-name");
 
     KijiTableKeyValueStore<String> output = new KijiTableKeyValueStore<String>();
     output.initFromConf(conf);

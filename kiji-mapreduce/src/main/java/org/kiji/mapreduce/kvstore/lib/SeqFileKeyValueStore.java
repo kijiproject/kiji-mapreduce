@@ -72,7 +72,7 @@ public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
 
   /** {@inheritDoc} */
   @Override
-  public KeyValueStoreReader<K, V> open() throws IOException, InterruptedException {
+  public KeyValueStoreReader<K, V> open() throws IOException {
     return new Reader(getConf(), getExpandedInputPaths());
   }
 
@@ -82,7 +82,7 @@ public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
    * has value <i>K</i>.</p>
    */
-  private class Reader extends KeyValueStoreReader<K, V> {
+  private class Reader implements KeyValueStoreReader<K, V> {
     /** A map from key field to its corresponding value in the SequenceFile. */
     private Map<K, V> mMap;
 
@@ -135,7 +135,7 @@ public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
 
     /** {@inheritDoc} */
     @Override
-    public V get(K key) throws IOException, InterruptedException {
+    public V get(K key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Reader is closed");
       }
@@ -144,7 +144,7 @@ public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
 
     /** {@inheritDoc} */
     @Override
-    public boolean containsKey(K key) throws IOException, InterruptedException {
+    public boolean containsKey(K key) throws IOException {
       if (!isOpen()) {
         throw new IOException("Reader is closed");
       }
