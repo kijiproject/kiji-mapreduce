@@ -107,6 +107,7 @@ public final class TextFileKeyValueStore implements KeyValueStore<String, String
    * instances. You should use this to specify the input to this KeyValueStore.
    * Call the build() method to return a new, configured TextFileKeyValueStore instance.
    */
+  @ApiAudience.Public
   public static final class Builder {
     private FileStoreHelper.Builder mFileBuilder;
     private String mDelim;
@@ -260,7 +261,8 @@ public final class TextFileKeyValueStore implements KeyValueStore<String, String
    * has value <i>K</i>. Where multiple files back the reader, the order in which files
    * are processed is undefined.</p>
    */
-  private static class Reader implements KeyValueStoreReader<String, String> {
+  @ApiAudience.Private
+  private static final class Reader implements KeyValueStoreReader<String, String> {
     /** A map from keys to values loaded from the input files. */
     private Map<String, String> mMap;
 

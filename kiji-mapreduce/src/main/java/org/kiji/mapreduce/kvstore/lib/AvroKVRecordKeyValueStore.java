@@ -67,6 +67,7 @@ public final class AvroKVRecordKeyValueStore<K, V> implements KeyValueStore<K, V
    * instances. You should use this to specify the input to this KeyValueStore.
    * Call the build() method to return a new, configured AvroKVRecordKeyValueStore instance.
    */
+  @ApiAudience.Public
   public static final class Builder {
     private AvroRecordKeyValueStore.Builder mAvroRecordStoreBuilder;
 
@@ -207,7 +208,8 @@ public final class AvroKVRecordKeyValueStore<K, V> implements KeyValueStore<K, V
    * <p>Lookups for a key <i>K</i> will return the "value" field of the first record
    * in the file where the key field has value <i>K</i>.</p>
    */
-  static class Reader<K, V> implements KeyValueStoreReader<K, V> {
+  @ApiAudience.Private
+  static final class Reader<K, V> implements KeyValueStoreReader<K, V> {
     /** A wrapped Avro store reader for looking up a record by its 'key' field. */
     private final KeyValueStoreReader<K, GenericRecord> mReader;
 

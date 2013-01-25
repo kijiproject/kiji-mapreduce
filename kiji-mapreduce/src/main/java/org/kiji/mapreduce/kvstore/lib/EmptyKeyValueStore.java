@@ -45,6 +45,7 @@ public final class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
    * @param <K> The type of the key field for the store.
    * @param <V> The type of value field for the store.
    */
+  @ApiAudience.Public
   public static final class Builder<K, V> {
     /**
      * Private, default constructor. Call the builder() method of this KeyValueStore
@@ -139,6 +140,7 @@ public final class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
    * @param K the key type to accept.
    * @param V the value type to return (in practice, all values will be null).
    */
+  @ApiAudience.Private
   private final class EmptyKeyValueReader implements KeyValueStoreReader<K, V> {
     /** Construct the EmptyKeyValueReader. */
     private EmptyKeyValueReader() {

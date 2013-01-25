@@ -102,6 +102,7 @@ final class FileStoreHelper implements Configurable {
    * you should reflect this via composition in the other file-backed store builder
    * APIs.</p>
    */
+  @ApiAudience.Private
   static final class Builder {
     private Configuration mConf;
     private List<Path> mInputPaths;
@@ -205,7 +206,8 @@ final class FileStoreHelper implements Configurable {
    * may include directories to include only files; directories are expanded to multiple
    * file entries that are the files in this directory.
    */
-  private class DirExpandAggregator extends Lists.Aggregator<Path, List<Path>> {
+  @ApiAudience.Private
+  private final class DirExpandAggregator extends Lists.Aggregator<Path, List<Path>> {
     // TODO(aaron): This class stands ready to be factored out to assist other places
     // in Wibi where we need to expand a list of files, dirs and globs into just a list
     // of files.

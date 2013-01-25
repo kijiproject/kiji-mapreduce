@@ -63,6 +63,7 @@ public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
    * instances. You should use this to specify the input to this KeyValueStore.
    * Call the build() method to return a new, configured SeqFileKeyValueStore instance.
    */
+  @ApiAudience.Public
   public static final class Builder {
     private FileStoreHelper.Builder mFileBuilder;
 
@@ -196,6 +197,7 @@ public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
    * has value <i>K</i>.</p>
    */
+  @ApiAudience.Private
   private final class Reader implements KeyValueStoreReader<K, V> {
     /** A map from key field to its corresponding value in the SequenceFile. */
     private Map<K, V> mMap;

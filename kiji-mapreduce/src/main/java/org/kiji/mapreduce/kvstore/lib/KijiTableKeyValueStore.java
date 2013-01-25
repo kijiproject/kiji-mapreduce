@@ -75,7 +75,7 @@ import org.kiji.schema.KijiTableReader;
  * @param <V> the value type returned by this key-value store.
  */
 @ApiAudience.Public
-public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<String, V> {
+public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<String, V> {
   // TODO(WIBI-1652): Add a flag that allows users to specify hex-strings (pre-hashed entity ids)
   // as keys instead of "vanilla" key strings.
 
@@ -107,6 +107,7 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
    * instances. You should use this to specify the input to this KeyValueStore.
    * Call the build() method to return a new KijiTableKeyValueStore instance.
    */
+  @ApiAudience.Public
   public static final class Builder {
     private String mTableName;
     private KijiColumnName mColumn;
@@ -418,6 +419,7 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
   }
 
   /** KeyValueStoreReader implementation that reads from a Kiji table. */
+  @ApiAudience.Private
   private final class TableKVReader implements KeyValueStoreReader<String, V> {
     /** Kiji instance to use. */
     private Kiji mKiji;

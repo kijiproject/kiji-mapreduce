@@ -87,6 +87,7 @@ public final class AvroRecordKeyValueStore<K, V extends IndexedRecord>
    * instances. You should use this to specify the input to this KeyValueStore.
    * Call the build() method to return a new, configured AvroRecordKeyValueStore instance.
    */
+  @ApiAudience.Public
   public static final class Builder {
     private FileStoreHelper.Builder mFileBuilder;
     private Schema mReaderSchema;
@@ -263,7 +264,8 @@ public final class AvroRecordKeyValueStore<K, V extends IndexedRecord>
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
    * has value <i>K</i>.</p>
    */
-  static class Reader<K, V extends IndexedRecord> implements KeyValueStoreReader<K, V> {
+  @ApiAudience.Private
+  static final class Reader<K, V extends IndexedRecord> implements KeyValueStoreReader<K, V> {
     /** A map from key field to its corresponding record in the Avro container file. */
     private Map<K, V> mMap;
 

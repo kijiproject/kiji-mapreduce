@@ -47,6 +47,7 @@ public final class UnconfiguredKeyValueStore<K, V> implements KeyValueStore<K, V
    * @param <K> The type of the key field for the store.
    * @param <V> The type of value field for the store.
    */
+  @ApiAudience.Public
   public static final class Builder<K, V> {
     /**
      * Private, default constructor. Call the builder() method of this KeyValueStore
