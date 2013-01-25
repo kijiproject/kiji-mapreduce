@@ -186,8 +186,7 @@ public final class TextFileKeyValueStore implements KeyValueStore<String, String
      * @return the initialized KeyValueStore.
      */
     public TextFileKeyValueStore build() {
-      FileStoreHelper fileHelper = mFileBuilder.build();
-      return new TextFileKeyValueStore(fileHelper, mDelim);
+      return new TextFileKeyValueStore(this);
     }
   }
 
@@ -207,18 +206,17 @@ public final class TextFileKeyValueStore implements KeyValueStore<String, String
    * to get a new builder instance.
    */
   public TextFileKeyValueStore() {
-    this(FileStoreHelper.create(), DEFAULT_DELIMITER);
+    this(builder());
   }
 
   /**
    * Main constructor used by the builder; creates a new TextFileKeyValueStore to read text files.
    *
-   * @param fileHelper the FileStoreHelper to use to manage files.
-   * @param delimiter the delimiter string between keys and values in the files.
+   * @param builder the builder to configure from.
    */
-  private TextFileKeyValueStore(FileStoreHelper fileHelper, String delimiter) {
-    mFileHelper = fileHelper;
-    mDelim = delimiter;
+  private TextFileKeyValueStore(Builder builder) {
+    mFileHelper = builder.mFileBuilder.build();
+    mDelim = builder.mDelim;
     mOpened = false;
   }
 

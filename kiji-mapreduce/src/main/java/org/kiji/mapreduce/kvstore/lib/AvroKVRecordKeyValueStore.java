@@ -145,8 +145,7 @@ public final class AvroKVRecordKeyValueStore<K, V> implements KeyValueStore<K, V
      * @return the initialized KeyValueStore.
      */
     public <K, V> AvroKVRecordKeyValueStore<K, V> build() {
-      AvroRecordKeyValueStore<K, GenericRecord> delegateStore = mAvroRecordStoreBuilder.build();
-      return new AvroKVRecordKeyValueStore<K, V>(delegateStore);
+      return new AvroKVRecordKeyValueStore<K, V>(this);
     }
   }
 
@@ -161,12 +160,12 @@ public final class AvroKVRecordKeyValueStore<K, V> implements KeyValueStore<K, V
   }
 
   /**
-   * Constructs an AvroKVRecordKeyValueStore.
+   * Constructs an AvroKVRecordKeyValueStore from a builder.
    *
-   * @param delegateStore the underlying AvroRecordKeyValueStore to use.
+   * @param builder the builder instance to configure from.
    */
-  private AvroKVRecordKeyValueStore(AvroRecordKeyValueStore<K, GenericRecord> delegateStore) {
-    mStore = delegateStore;
+  private AvroKVRecordKeyValueStore(Builder builder) {
+    mStore = builder.mAvroRecordStoreBuilder.build();
   }
 
   /**
@@ -175,7 +174,7 @@ public final class AvroKVRecordKeyValueStore<K, V> implements KeyValueStore<K, V
    * call AvroKVRecordKeyValueStore.builder() to get a new builder instance.
    */
   public AvroKVRecordKeyValueStore() {
-    this(AvroRecordKeyValueStore.builder().<K, GenericRecord>build());
+    this(builder());
   }
 
   /** {@inheritDoc} */

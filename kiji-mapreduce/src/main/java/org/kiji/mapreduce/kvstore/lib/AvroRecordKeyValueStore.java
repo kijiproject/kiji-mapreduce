@@ -183,8 +183,7 @@ public final class AvroRecordKeyValueStore<K, V extends IndexedRecord>
       if (null == mKeyFieldName || mKeyFieldName.isEmpty()) {
         throw new IllegalArgumentException("Must specify a non-empty key field name");
       }
-      FileStoreHelper fileHelper = mFileBuilder.build();
-      return new AvroRecordKeyValueStore<K, V>(fileHelper, mReaderSchema, mKeyFieldName);
+      return new AvroRecordKeyValueStore<K, V>(this);
     }
   }
 
@@ -199,18 +198,14 @@ public final class AvroRecordKeyValueStore<K, V extends IndexedRecord>
   }
 
   /**
-   * Constructs an AvroRecordKeyValueStore.
+   * Constructs an AvroRecordKeyValueStore from a builder.
    *
-   * @param fileHelper the FileStoreHelper to use to manage files.
-   * @param readerSchema the reader schema to apply to records in the files.
-   * @param keyFieldName the name of the field of each record in the file
-   *     that is used to construct the index of keys to records.
+   * @param builder the builder to configure from.
    */
-  private AvroRecordKeyValueStore(FileStoreHelper fileHelper, Schema readerSchema,
-      String keyFieldName) {
-    mFileHelper = fileHelper;
-    mReaderSchema = readerSchema;
-    mKeyFieldName = keyFieldName;
+  private AvroRecordKeyValueStore(Builder builder) {
+    mFileHelper = builder.mFileBuilder.build();
+    mReaderSchema = builder.mReaderSchema;
+    mKeyFieldName = builder.mKeyFieldName;
   }
 
   /**
@@ -219,7 +214,7 @@ public final class AvroRecordKeyValueStore<K, V extends IndexedRecord>
    * to get a new builder instance.
    */
   public AvroRecordKeyValueStore() {
-    this(FileStoreHelper.create(), null, null);
+    this(builder());
   }
 
   /** {@inheritDoc} */

@@ -129,8 +129,7 @@ public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
      * @return the initialized KeyValueStore.
      */
     public <K, V> SeqFileKeyValueStore<K, V> build() {
-      FileStoreHelper fileHelper = mFileBuilder.build();
-      return new SeqFileKeyValueStore<K, V>(fileHelper);
+      return new SeqFileKeyValueStore<K, V>(this);
     }
   }
 
@@ -150,16 +149,16 @@ public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
    * call SeqFileKeyValueStore.builder() to get a new builder instance.
    */
   public SeqFileKeyValueStore() {
-    this(FileStoreHelper.create());
+    this(builder());
   }
 
   /**
    * Main constructor used by the builder; create a new SeqFileKeyValueStore to read SequenceFiles.
    *
-   * @param fileHelper the FileStoreHelper that manages input files.
+   * @param builder the builder to configure from.
    */
-  private SeqFileKeyValueStore(FileStoreHelper fileHelper) {
-    mFileHelper = fileHelper;
+  private SeqFileKeyValueStore(Builder builder) {
+    mFileHelper = builder.mFileBuilder.build();
   }
 
   /** {@inheritDoc} */

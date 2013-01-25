@@ -167,7 +167,7 @@ final class FileStoreHelper implements Configurable {
      * @return a new, configured FileStoreHelper.
      */
     public FileStoreHelper build() {
-      return new FileStoreHelper(mConf, mInputPaths, mUseDCache);
+      return new FileStoreHelper(this);
     }
   }
 
@@ -179,27 +179,13 @@ final class FileStoreHelper implements Configurable {
   /**
    * Constructor invoked by Builder.build().
    *
-   * @param conf the Configuration to use to access FileSystem instances.
-   * @param inputPaths the list of input paths to files backing this KeyValueStore
-   * @param useDCache is true if files should be accessed through the DistributedCache.
+   * @param builder the builder to configure from.
    */
-  private FileStoreHelper(Configuration conf, List<Path> inputPaths, boolean useDCache) {
-    mConf = conf;
-    mInputPaths = inputPaths;
-    mUseDCache = useDCache;
+  private FileStoreHelper(Builder builder) {
+    mConf = builder.mConf;
+    mInputPaths = builder.mInputPaths;
+    mUseDCache = builder.mUseDCache;
     mDCachePrefix = "";
-  }
-
-  /**
-   * Create an uninitialized FileStoreHelper. Used when KeyValueStore instances
-   * are being created via reflection; you should prefer to create FileStoreHelper
-   * instances through a FileStoreHelper.Builder. You can get an instance of this
-   * by calling FileStoreHelper.builder().
-   *
-   * @return a new, uninitialized FileStoreHelper.
-   */
-  static FileStoreHelper create() {
-    return FileStoreHelper.builder().build();
   }
 
   /** {@inheritDoc} */
