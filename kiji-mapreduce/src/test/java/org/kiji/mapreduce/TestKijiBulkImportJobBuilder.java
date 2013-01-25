@@ -26,7 +26,6 @@ import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -45,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import org.kiji.mapreduce.input.TextMapReduceJobInput;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
+import org.kiji.mapreduce.kvstore.RequiredStores;
 import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
 import org.kiji.mapreduce.kvstore.lib.EmptyKeyValueStore;
 import org.kiji.mapreduce.mapper.BulkImportMapper;
@@ -83,8 +83,7 @@ public class TestKijiBulkImportJobBuilder extends KijiClientTest {
     /** {@inheritDoc} */
     @Override
     public Map<String, KeyValueStore<?, ?>> getRequiredStores() {
-      return Collections.<String, KeyValueStore<?, ?>>singletonMap(
-          "foostore", new EmptyKeyValueStore<String, Object>());
+      return RequiredStores.just("foostore", EmptyKeyValueStore.get());
     }
   }
 

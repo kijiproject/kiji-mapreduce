@@ -26,18 +26,73 @@ import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
 
 /**
  * A KeyValueStore that contains no data. Perhaps useful for testing.
+ * Get an instance by calling EmptyKeyValueStore.builder().build()
+ * or get a singleton instance by calling EmptyKeyValueStore.get();
  *
  * @param <K> the key type for the store.
  * @param <V> the value type for the store.
  */
 @ApiAudience.Public
-public class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
+public final class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
   /** The single reader instance to return for all calls to open(). */
   private final EmptyKeyValueReader mReaderInstance;
 
+  /**
+   * A Builder-pattern class that configures and creates new EmptyKeyValueStore
+   * instances. You should use this to specify the input to this KeyValueStore.
+   * Call the build() method to return a new EmptyKeyValueStore instance.
+   *
+   * @param <K> The type of the key field for the store.
+   * @param <V> The type of value field for the store.
+   */
+  public static final class Builder<K, V> {
+    /**
+     * Private, default constructor. Call the builder() method of this KeyValueStore
+     * to get a new builder instance.
+     */
+    private Builder() {
+    }
+
+    /**
+     * Build a new EmptyKeyValueStore instance.
+     *
+     * @return the initialized KeyValueStore.
+     */
+    public EmptyKeyValueStore<K, V> build() {
+      return new EmptyKeyValueStore<K, V>();
+    }
+  }
+
+  /**
+   * Creates a new EmptyKeyValueStore.Builder instance that can be used
+   * to create a new KeyValueStore.
+   *
+   * @param <KT> The type of the key field.
+   * @param <VT> The type of the value field.
+   * @return a new Builder instance.
+   */
+  public static <KT, VT> Builder<KT, VT> builder() {
+    return new Builder<KT, VT>();
+  }
+
   /** Construct the definition of an empty KeyValueStore. */
-  public EmptyKeyValueStore() {
+  private EmptyKeyValueStore() {
     mReaderInstance = new EmptyKeyValueReader();
+  }
+
+  /** singleton instance. */
+  private static final EmptyKeyValueStore<?, ?> INSTANCE = new EmptyKeyValueStore();
+
+  /**
+   * Returns a singleton EmptyKeyValueStore instance.
+   *
+   * @param <KT> The type of the key field.
+   * @param <VT> The type of the value field.
+   * @return a singleton EmptyKeyValueStore instance.
+   */
+  @SuppressWarnings("unchecked")
+  public static <KT, VT> EmptyKeyValueStore<KT, VT> get() {
+    return (EmptyKeyValueStore<KT, VT>) INSTANCE;
   }
 
   /** {@inheritDoc} */
@@ -69,9 +124,8 @@ public class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
       return false;
     }
 
-    @SuppressWarnings("unchecked")
-    EmptyKeyValueStore<K, V> other = (EmptyKeyValueStore<K, V>) otherObj;
-    return other == this;
+    // All empty instances are equal.
+    return true;
   }
 
   /** {@inheritDoc} */

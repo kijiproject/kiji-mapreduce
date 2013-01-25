@@ -20,6 +20,7 @@
 package org.kiji.mapreduce.kvstore.lib;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -31,49 +32,163 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
+import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
 
 /**
  * KeyValueStore implementation that reads records from SequenceFiles.
  *
  * <p>When specifying a SeqFileKeyValueStore in a kvstores XML file, you may
- * use the properties listed in {@link FileKeyValueStore}. No further properties
- * are provided for this implementation.</p>
+ * specify the following properties:</p>
+ * <ul>
+ *   <li><tt>dcache</tt> - True if files should be accessed by jobs through the DistributedCache.
+ *   <li><tt>paths</tt> - A comma-separated list of HDFS paths to files backing this store.
+ * </ul>
  *
  * @param <K> The type of the key field stored in the SequenceFile(s).
  * @param <V> The type of value field stored in the SequenceFile(s).
  */
 @ApiAudience.Public
-public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
+public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
 
-  /** Class that represents the options available to configure a SeqFileKeyValueStore. */
-  public static class Options extends FileKeyValueStore.Options<Options> {
-    // This is currently empty; placeholder for future SeqFileKeyValueStore-specific
-    // options. Right now, everything we need can be handled by the FileKeyValueStore.Options.
+  /** Helper object to manage backing files. */
+  private final FileStoreHelper mFileHelper;
 
-    /** Default constructor. */
-    public Options() {
+  /** true if the user has called open(); cannot call initFromConf() after that. */
+  private boolean mOpened;
+
+  /**
+   * A Builder-pattern class that configures and creates new SeqFileKeyValueStore
+   * instances. You should use this to specify the input to this KeyValueStore.
+   * Call the build() method to return a new, configured SeqFileKeyValueStore instance.
+   */
+  public static final class Builder {
+    private FileStoreHelper.Builder mFileBuilder;
+
+    /**
+     * Private, default constructor. Call the builder() method of this KeyValueStore
+     * to get a new builder instance.
+     */
+    private Builder() {
+      mFileBuilder = FileStoreHelper.builder();
+    }
+
+    /**
+     * Sets the Hadoop configuration instance to use.
+     *
+     * @param conf The configuration.
+     * @return This builder instance.
+     */
+    public Builder withConfiguration(Configuration conf) {
+      mFileBuilder.withConfiguration(conf);
+      return this;
+    }
+
+    /**
+     * Adds a path to the list of files to load.
+     *
+     * @param path The input file/directory path.
+     * @return This builder instance.
+     */
+    public Builder withInputPath(Path path) {
+      mFileBuilder.withInputPath(path);
+      return this;
+    }
+
+    /**
+     * Replaces the current list of files to load with the set of files
+     * specified as an argument.
+     *
+     * @param paths The input file/directory paths.
+     * @return This builder instance.
+     */
+    public Builder withInputPaths(List<Path> paths) {
+      mFileBuilder.withInputPaths(paths);
+      return this;
+    }
+
+    /**
+     * Sets a flag indicating the use of the DistributedCache to distribute
+     * input files.
+     *
+     * @param enabled true if the DistributedCache should be used, false otherwise.
+     * @return This builder instance.
+     */
+    public Builder withDistributedCache(boolean enabled) {
+      mFileBuilder.withDistributedCache(enabled);
+      return this;
+    }
+
+    /**
+     * Build a new SeqFileKeyValueStore instance.
+     *
+     *
+     * @param <K> The type of the key field stored in the SequenceFile(s).
+     * @param <V> The type of value field stored in the SequenceFile(s).
+     * @return the initialized KeyValueStore.
+     */
+    public <K, V> SeqFileKeyValueStore<K, V> build() {
+      FileStoreHelper fileHelper = mFileBuilder.build();
+      return new SeqFileKeyValueStore<K, V>(fileHelper);
     }
   }
 
-  /** Default constructor. Used only for reflection. */
-  public SeqFileKeyValueStore() {
-    this(new Options());
+  /**
+   * Creates a new SeqFileKeyValueStore.Builder instance that can be used
+   * to configure and create a new KeyValueStore.
+   *
+   * @return a new Builder instance.
+   */
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
-   * Main constructor; create a new SeqFileKeyValueStore to read SequenceFiles.
-   *
-   * @param options the options that configure the file store.
+   * Default constructor. Used only for reflection. You should create
+   * and configure new SeqFileKeyValueStore instances by using a builder;
+   * call SeqFileKeyValueStore.builder() to get a new builder instance.
    */
-  public SeqFileKeyValueStore(Options options) {
-    super(options);
+  public SeqFileKeyValueStore() {
+    this(FileStoreHelper.create());
+  }
+
+  /**
+   * Main constructor used by the builder; create a new SeqFileKeyValueStore to read SequenceFiles.
+   *
+   * @param fileHelper the FileStoreHelper that manages input files.
+   */
+  private SeqFileKeyValueStore(FileStoreHelper fileHelper) {
+    mFileHelper = fileHelper;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
+    mFileHelper.storeToConf(conf);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
+    if (mOpened) {
+      throw new IllegalStateException("Cannot reinitialize; already opened a reader.");
+    }
+
+    mFileHelper.initFromConf(conf);
+  }
+
+  /** @return the raw input paths specified as input by the user. */
+  public List<Path> getInputPaths() {
+    // Visible chiefly for testing.
+    return Collections.unmodifiableList(mFileHelper.getInputPaths());
   }
 
   /** {@inheritDoc} */
   @Override
   public KeyValueStoreReader<K, V> open() throws IOException {
-    return new Reader(getConf(), getExpandedInputPaths());
+    mOpened = true;
+    return new Reader(mFileHelper.getConf(), mFileHelper.getExpandedInputPaths());
   }
 
   /**
@@ -82,7 +197,7 @@ public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
    * has value <i>K</i>.</p>
    */
-  private class Reader implements KeyValueStoreReader<K, V> {
+  private final class Reader implements KeyValueStoreReader<K, V> {
     /** A map from key field to its corresponding value in the SequenceFile. */
     private Map<K, V> mMap;
 
@@ -90,7 +205,7 @@ public class SeqFileKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
      * Constructs a key value reader over a SequenceFile.
      *
      * @param conf The Hadoop configuration.
-     * @param paths The path to the Avro file(s).
+     * @param paths The path to the sequencefile(s).
      * @throws IOException If the seqfile cannot be read.
      */
     @SuppressWarnings("unchecked")

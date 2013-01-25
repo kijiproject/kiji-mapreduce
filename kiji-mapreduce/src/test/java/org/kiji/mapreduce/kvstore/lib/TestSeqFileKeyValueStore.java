@@ -34,6 +34,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
 
 /** Test that the SeqFileKeyValueStore implementation works. */
@@ -74,8 +75,8 @@ public class TestSeqFileKeyValueStore {
   @Test
   public void testSeqFileKVStore() throws IOException, InterruptedException {
     Path p = writeSeqFile();
-    SeqFileKeyValueStore<Text, IntWritable> store = new SeqFileKeyValueStore<Text, IntWritable>(
-        new SeqFileKeyValueStore.Options().withInputPath(p));
+    KeyValueStore<Text, IntWritable> store = SeqFileKeyValueStore.builder()
+        .withInputPath(p).build();
     KeyValueStoreReader<Text, IntWritable> reader = store.open();
 
     assertTrue(reader.containsKey(new Text("one")));
@@ -90,5 +91,4 @@ public class TestSeqFileKeyValueStore {
 
     reader.close();
   }
-
 }

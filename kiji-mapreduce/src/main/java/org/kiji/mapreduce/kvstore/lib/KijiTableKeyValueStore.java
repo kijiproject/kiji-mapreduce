@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.avro.Schema;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HConstants;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.KijiMapReduceJob;
@@ -52,21 +53,22 @@ import org.kiji.schema.KijiTableReader;
  *
  * <p>This implementation assumes that the column is immutable while being used in this
  * fashion. It may cache values to improve repeated read performance. You can set the
- * cache size with {@link #setCacheLimit(int)}.</p>
+ * cache size with {@link KijiTableKeyValueStore.Builder#withCacheLimit(int)}.</p>
  *
  * <p>When configuring a KijiTableKeyValueStore from a kvstores XML file, the following
  * properties may be used to specify the behavior of this class:</p>
  * <ul>
  *   <li><tt>table</tt> - The name of the table backing this store.</li>
- *   <li><tt>col</tt> - The family and qualifier of the column representing the values
- *       in this store.</li>
+ *   <li><tt>column</tt> - The family and qualifier of the column representing the values
+ *       in this store. e.g., <tt>info:name</tt></li>
  *   <li><tt>min.ts</tt> - A <tt>long</tt> value representing the minimum timestamp to
  *       include in the results for this KeyValueStore.</li>
  *   <li><tt>max.ts</tt> - A <tt>long</tt> value representing the maximum timestamp to
  *       include in the results for this KeyValueStore.</li>
  *   <li><tt>cache.size</tt> - An <tt>int</tt> value representing the number of results
  *       to cache locally. (Default is 100; set to 0 to disable caching.)</li>
- *   <li><tt>schema</tt> - The common Avro reader schema used to deserialize values from
+ *   <li><tt>avro.reader.schema</tt> - The common Avro reader schema used to
+ *       deserialize values from
  *       the value column to return them to the client.</li>
  * </ul>
  *
@@ -80,13 +82,14 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
   /** Cache the most recent 100 lookups in memory. */
   private static final int DEFAULT_MAX_OBJECTS_TO_CACHE = 100;
 
-  // TODO(WIBI-1546): Make these public, and document what these variables are for.
+  // See javadoc for this class to understand the definitions of these configuration keys.
+
   private static final String CONF_TABLE = "table";
-  private static final String CONF_COLUMN = "col";
+  private static final String CONF_COLUMN = "column";
   private static final String CONF_MIN_TS = "min.ts";
   private static final String CONF_MAX_TS = "max.ts";
   private static final String CONF_CACHE_SIZE = "cache.size";
-  private static final String CONF_READER_SCHEMA = "schema";
+  private static final String CONF_READER_SCHEMA = "avro.reader.schema";
 
   private String mTableName;
   private KijiColumnName mColumn;
@@ -96,93 +99,184 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
   private Schema mReaderSchema;
   private Configuration mConf;
 
-  /** Constructs an unconfigured KeyValueStore. */
+  /** true if the user has called open() on this object. */
+  private boolean mOpened;
+
+  /**
+   * A Builder-pattern class that configures and creates new KijiTableKeyValueStore
+   * instances. You should use this to specify the input to this KeyValueStore.
+   * Call the build() method to return a new KijiTableKeyValueStore instance.
+   */
+  public static final class Builder {
+    private String mTableName;
+    private KijiColumnName mColumn;
+    private long mMinTs;
+    private long mMaxTs;
+    private int mMaxObjectsToCache = DEFAULT_MAX_OBJECTS_TO_CACHE;
+    private Schema mReaderSchema;
+    private Configuration mConf;
+
+    /**
+     * Private, default constructor. Call the builder() method of this KeyValueStore
+     * to get a new builder instance.
+     */
+    private Builder() {
+      mMaxObjectsToCache = DEFAULT_MAX_OBJECTS_TO_CACHE;
+      mMinTs = 0;
+      mMaxTs = HConstants.LATEST_TIMESTAMP;
+      mConf = new Configuration();
+    }
+
+    /**
+     * Sets the Configuration to use to connect to Kiji.
+     *
+     * @param conf the Configuration to use.
+     * @return this builder instance.
+     */
+    public Builder withConfiguration(Configuration conf) {
+      mConf = conf;
+      return this;
+    }
+
+    /**
+     * Sets the table to use as the backing store.
+     *
+     * @param tableName the table to use.
+     * @return this builder instance.
+     */
+    public Builder withTable(String tableName) {
+      if (null == tableName || tableName.isEmpty()) {
+        throw new IllegalArgumentException("Must specify a non-empty table name");
+      }
+      mTableName = tableName;
+      return this;
+    }
+
+    /**
+     * Sets the column to retrieve values from.
+     *
+     * @param colName the column to use.
+     * @return this builder instance.
+     */
+    public Builder withColumn(KijiColumnName colName) {
+      if (!colName.isFullyQualified()) {
+        throw new IllegalArgumentException("Must specify a fully-qualified column, not a map.");
+      }
+      mColumn = colName;
+      return this;
+    }
+
+    /**
+     * Sets the column to retrieve values from.
+     *
+     * @param family the column family to use.
+     * @param qualifier the column qualifier to use.
+     * @return this builder instance.
+     */
+    public Builder withColumn(String family, String qualifier) {
+      return withColumn(new KijiColumnName(family, qualifier));
+    }
+
+    /**
+     * Sets the oldest timestamp to retrieve values from in the column.
+     *
+     * @param timestamp the oldest timestamp to consider.
+     * @return this builder instance.
+     */
+    public Builder withMinTimestamp(long timestamp) {
+      mMinTs = timestamp;
+      return this;
+    }
+
+    /**
+     * Sets the newest timestamp to retrieve values from in the column.
+     *
+     * @param timestamp the newest timestamp to consider.
+     * @return this builder instance.
+     */
+    public Builder withMaxTimestamp(long timestamp) {
+      mMaxTs = timestamp;
+      return this;
+    }
+
+    /**
+     * Sets the maximum number of lookups to cache in memory.
+     *
+     * <p>Defaults to 100.</p>
+     *
+     * @param numValues the maximum number of values to keep in the cache.
+     * @return this builder instance.
+     */
+    public Builder withCacheLimit(int numValues) {
+      mMaxObjectsToCache = numValues;
+      return this;
+    }
+
+    /**
+     * Sets the reader schema to use when deserializing values from the value column.
+     * If set to null, will use the common reader schema associated with the column.
+     *
+     * @param schema the reader schema to use.
+     * @return this builder instance.
+     */
+    public Builder withReaderSchema(Schema schema) {
+      mReaderSchema = schema;
+      return this;
+    }
+
+    /**
+     * Build a new KijiTableKeyValueStore instance.
+     *
+     * @param <V> The value type for the KeyValueStore.
+     * @return the initialized KeyValueStore.
+     */
+    public <V> KijiTableKeyValueStore<V> build() {
+      if (null == mTableName || mTableName.isEmpty()) {
+        throw new IllegalArgumentException("Must specify a non-empty table name");
+      }
+      if (null == mColumn || !mColumn.isFullyQualified()) {
+        throw new IllegalArgumentException("Must specify a fully-qualified column");
+      }
+      if (mMinTs > mMaxTs) {
+        throw new IllegalArgumentException("Minimum timestamp must be less than max timestamp");
+      }
+
+      return new KijiTableKeyValueStore<V>(this);
+    }
+  }
+
+  /**
+   * Creates a new KijiTableKeyValueStore.Builder instance that can be used
+   * to configure and create a new KeyValueStore.
+   *
+   * @return a new Builder instance.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
+   * Default constructor. Used only for reflection. You should create and configure
+   * KijiTableFileKeyValueStore instances by using a builder; call
+   * KijiTableFileKeyValueStore.builder() to get a new builder instance.
+   */
   public KijiTableKeyValueStore() {
-    this(null, null);
+    this(builder());
   }
 
   /**
-   * Constructor that sets that name of the KeyValueStore, and the table and column to
-   * retrieve.
+   * Constructor that up this KeyValueStore using a builder.
    *
-   * @param tableName the name of the Kiji table to retrieve.
-   * @param column the fully-qualified column name to retrieve.
+   * @param builder the builder instance to read configuration from.
    */
-  public KijiTableKeyValueStore(String tableName, KijiColumnName column) {
-    this(tableName, column, 0L, Long.MAX_VALUE);
-  }
-
-  /**
-   * Constructor that sets that name of the KeyValueStore, and the table and column to
-   * retrieve.
-   *
-   * @param tableName the name of the Kiji table to retrieve.
-   * @param column the fully-qualified column name to retrieve.
-   * @param minTimestamp the oldest timestamp to consider when retrieving data.
-   * @param maxTimestamp the newest timestamp to consider when retrieving data.
-   */
-  public KijiTableKeyValueStore(String tableName, KijiColumnName column,
-      long minTimestamp, long maxTimestamp) {
-    mTableName = tableName;
-    mColumn = column;
-    mMinTs = minTimestamp;
-    mMaxTs = maxTimestamp;
-  }
-
-  /**
-   * Sets the table name to retrieve.
-   *
-   * @param tableName the table name to use for lookups.
-   */
-  public void setTableName(String tableName) {
-    mTableName = tableName;
-  }
-
-  /**
-   * Sets the column to use for values in the lookup store.
-   *
-   * @param column the column to retrieve. Must be fully-qualified (cannot be a map-type family).
-   */
-  public void setColumn(KijiColumnName column) {
-    mColumn = column;
-  }
-
-  /**
-   * Sets the minimum timestamp to use for lookups.
-   *
-   * @param minTs the oldest timestamp value to consider when doing lookups.
-   */
-  public void setMinTimestamp(long minTs) {
-    mMinTs = minTs;
-  }
-
-  /**
-   * Sets the maximum timestamp to use for lookups.
-   *
-   * @param maxTs the newest timestamp value to consider when doing lookups.
-   */
-  public void setMaxTimestamp(long maxTs) {
-    mMaxTs = maxTs;
-  }
-
-  /**
-   * Sets the maximum number of lookups to cache in memory.
-   *
-   * <p>Defaults to 100.</p>
-   *
-   * @param numValues the maximum number of values to keep in the cache.
-   */
-  public void setCacheLimit(int numValues) {
-    mMaxObjectsToCache = numValues;
-  }
-
-  /**
-   * Sets the reader schema to use when deserializing values from the value column.
-   *
-   * @param schema the reader schema to use.
-   */
-  public void setReaderSchema(Schema schema) {
-    mReaderSchema = schema;
+  public KijiTableKeyValueStore(Builder builder) {
+    mTableName = builder.mTableName;
+    mColumn = builder.mColumn;
+    mMinTs = builder.mMinTs;
+    mMaxTs = builder.mMaxTs;
+    mMaxObjectsToCache = builder.mMaxObjectsToCache;
+    mReaderSchema = builder.mReaderSchema;
+    mConf = builder.mConf;
   }
 
   /**
@@ -192,13 +286,18 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
    */
   @Override
   public void setConf(Configuration conf) {
+    if (mOpened) {
+      // Don't allow mutation after we start using this store for reads.
+      throw new IllegalStateException(
+          "Cannot set the configuration after a reader has been opened");
+    }
     mConf = conf;
   }
 
-  /** @return the Configuration object to use. */
+  /** @return a copy of the Configuration object we are using. */
   @Override
   public Configuration getConf() {
-    return mConf;
+    return new Configuration(mConf);
   }
 
   /** {@inheritDoc} */
@@ -210,7 +309,6 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
     if (null == mColumn) {
       throw new IOException("Required attribute not set: column");
     }
-
     if (!mColumn.isFullyQualified()) {
       throw new IOException("Column must be fully qualified");
     }
@@ -229,6 +327,12 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
   /** {@inheritDoc} */
   @Override
   public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
+    if (mOpened) {
+      // Don't allow mutation after we start using this store for reads.
+      throw new IllegalStateException(
+          "Cannot set the configuration after a reader has been opened");
+    }
+
     mTableName = conf.get(CONF_TABLE);
     mColumn = new KijiColumnName(conf.get(CONF_COLUMN));
     mMinTs = conf.getLong(CONF_MIN_TS, 0);
@@ -249,9 +353,11 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
   /** {@inheritDoc} */
   @Override
   public KeyValueStoreReader<String, V> open() throws IOException {
+    mOpened = true;
     return new TableKVReader();
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean equals(Object otherObj) {
     if (otherObj == this) {
@@ -302,11 +408,13 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
     return true;
   }
 
+  /** {@inheritDoc} */
   @Override
   public int hashCode() {
-    int tableHash = null == mTableName ? 0 : mTableName.hashCode();
-    int colHash = null == mColumn ? 0 : mColumn.hashCode();
-    return tableHash ^ colHash;
+    int hash = 17;
+    hash = hash + (null == mTableName ? 0 : mTableName.hashCode()) * 31;
+    hash = hash + (null == mColumn ? 0 : mColumn.hashCode()) * 31;
+    return hash;
   }
 
   /** KeyValueStoreReader implementation that reads from a Kiji table. */
@@ -374,6 +482,7 @@ public class KijiTableKeyValueStore<V> implements Configurable, KeyValueStore<St
 
       if (rowData.containsColumn(mColumn.getFamily(), mColumn.getQualifier())) {
         // If mReaderSchema is null, that's ok; it uses the cell writer schema.
+        // TODO: But we must actually use it if it's not null!
         V val = rowData.<V>getMostRecentValue(mColumn.getFamily(), mColumn.getQualifier());
         if (null != mResultCache) {
           mResultCache.put(entityId, val);

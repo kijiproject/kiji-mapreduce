@@ -75,7 +75,7 @@ public class TestKijiTransformJobBuilder {
 
     @Override
     public Map<String, KeyValueStore<?, ?>> getRequiredStores() {
-      return RequiredStores.just("mapperMap", new EmptyKeyValueStore<String, Object>());
+      return RequiredStores.just("mapperMap", EmptyKeyValueStore.get());
     }
   }
 
@@ -104,7 +104,7 @@ public class TestKijiTransformJobBuilder {
 
     @Override
     public Map<String, KeyValueStore<?, ?>> getRequiredStores() {
-      return RequiredStores.with("reducerMap", new EmptyKeyValueStore<String, Object>());
+      return RequiredStores.with("reducerMap", EmptyKeyValueStore.get());
     }
   }
 

@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
 
@@ -51,7 +52,8 @@ import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
  * <p>Line termination characters are removed before data is put in the KeyValueStore.</p>
  *
  * <p>By default, keys and values are tab-delimited. The delimiter may be set by the
- * <tt>setDelimiter()</tt> method. The delimiter may be multiple characters long.
+ * <tt>setDelimiter()</tt> method of the TextFileKeyValueStore.Builder instance.
+ * The delimiter may be multiple characters long.
  * The following rules are applied when breaking lines into keys and values:</p>
  * <ul>
  *   <li>Keys and values are separated by the first instance of the delimiter in the line.
@@ -70,17 +72,17 @@ import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
  *       like any other line in the file.</li>
  * </ul>
  *
- * <p>In addition to the properties listed in {@link FileKeyValueStore}, a kvstores
- * XML file may contain the following properties when specifying the behavior of this
- * class:</p>
+ * <p>A kvstores XML file may contain the following properties when specifying the
+ * behavior of this class:</p>
  * <ul>
+ *   <li><tt>dcache</tt> - True if files should be accessed by jobs through the DistributedCache.
  *   <li><tt>delim</tt> - The delimiter string that separates keys and values within
  *       a line of text. (Default is a tab character.)</li>
+ *   <li><tt>paths</tt> - A comma-separated list of HDFS paths to files backing this store.
  * </ul>
- *
  */
 @ApiAudience.Public
-public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
+public final class TextFileKeyValueStore implements KeyValueStore<String, String> {
 
   /** The configuration variable for the delimiter. */
   private static final String CONF_DELIMITER_KEY = "delim";
@@ -91,12 +93,30 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
    */
   public static final String DEFAULT_DELIMITER = "\t";
 
-  /** Class that represents the options available to configure a TextFileKeyValueStore. */
-  public static class Options extends FileKeyValueStore.Options<Options> {
+  /** Helper object to manage backing files. */
+  private final FileStoreHelper mFileHelper;
+
+  /** The delimiter string to use. */
+  private String mDelim;
+
+  /** true if the user has called open(); cannot call initFromConf() after that. */
+  private boolean mOpened;
+
+  /**
+   * A Builder-pattern class that configures and creates new TextFileKeyValueStore
+   * instances. You should use this to specify the input to this KeyValueStore.
+   * Call the build() method to return a new, configured TextFileKeyValueStore instance.
+   */
+  public static final class Builder {
+    private FileStoreHelper.Builder mFileBuilder;
     private String mDelim;
 
-    /** Default constructor. */
-    public Options() {
+    /**
+     * Private, default constructor. Call the builder() method of this KeyValueStore
+     * to get a new builder instance.
+     */
+    private Builder() {
+      mFileBuilder = FileStoreHelper.builder();
       mDelim = DEFAULT_DELIMITER;
     }
 
@@ -104,88 +124,131 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
      * Specifies the delimiter between the key and the value on a line in the file.
      *
      * @param delim the delimiter string to use.
-     * @return this Options instance.
+     * @return this Builder instance.
      */
-    public Options withDelimiter(String delim) {
+    public Builder withDelimiter(String delim) {
+      if (null == delim || delim.isEmpty()) {
+        throw new IllegalArgumentException("Cannot use empty delimiter");
+      }
       mDelim = delim;
       return this;
     }
 
     /**
-     * Returns the delimiter string. This defaults to a tab character.
+     * Sets the Hadoop configuration instance to use.
      *
-     * @return the delimiter string.
+     * @param conf The configuration.
+     * @return This builder instance.
      */
-    public String getDelimiter() {
-      return mDelim;
+    public Builder withConfiguration(Configuration conf) {
+      mFileBuilder.withConfiguration(conf);
+      return this;
+    }
+
+    /**
+     * Adds a path to the list of files to load.
+     *
+     * @param path The input file/directory path.
+     * @return This builder instance.
+     */
+    public Builder withInputPath(Path path) {
+      mFileBuilder.withInputPath(path);
+      return this;
+    }
+
+    /**
+     * Replaces the current list of files to load with the set of files
+     * specified as an argument.
+     *
+     * @param paths The input file/directory paths.
+     * @return This builder instance.
+     */
+    public Builder withInputPaths(List<Path> paths) {
+      mFileBuilder.withInputPaths(paths);
+      return this;
+    }
+
+    /**
+     * Sets a flag indicating the use of the DistributedCache to distribute
+     * input files.
+     *
+     * @param enabled true if the DistributedCache should be used, false otherwise.
+     * @return This builder instance.
+     */
+    public Builder withDistributedCache(boolean enabled) {
+      mFileBuilder.withDistributedCache(enabled);
+      return this;
+    }
+
+    /**
+     * Build a new TextFileKeyValueStore instance.
+     *
+     * @return the initialized KeyValueStore.
+     */
+    public TextFileKeyValueStore build() {
+      FileStoreHelper fileHelper = mFileBuilder.build();
+      return new TextFileKeyValueStore(fileHelper, mDelim);
     }
   }
 
-  /** The delimiter string to use. */
-  private String mDelim;
-
-  /** Default constructor. Used only for reflection. */
-  public TextFileKeyValueStore() {
-    this(new Options());
+  /**
+   * Creates a new TextFileKeyValueStore.Builder instance that can be used
+   * to configure and create a new KeyValueStore.
+   *
+   * @return a new Builder instance.
+   */
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
-   * Main constructor; create a new TextFileKeyValueStore to read text files.
-   *
-   * @param options the options that configure the file store.
+   * Default constructor. Used only for reflection. You should create and configure
+   * TextFileKeyValueStore instances by using a builder; call TextFileKeyValueStore.builder()
+   * to get a new builder instance.
    */
-  public TextFileKeyValueStore(Options options) {
-    super(options);
-    setDelimiter(options.getDelimiter());
+  public TextFileKeyValueStore() {
+    this(FileStoreHelper.create(), DEFAULT_DELIMITER);
+  }
+
+  /**
+   * Main constructor used by the builder; creates a new TextFileKeyValueStore to read text files.
+   *
+   * @param fileHelper the FileStoreHelper to use to manage files.
+   * @param delimiter the delimiter string between keys and values in the files.
+   */
+  private TextFileKeyValueStore(FileStoreHelper fileHelper, String delimiter) {
+    mFileHelper = fileHelper;
+    mDelim = delimiter;
+    mOpened = false;
   }
 
   /** {@inheritDoc} */
   @Override
   public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
-    super.storeToConf(conf);
-
     if (null == mDelim || mDelim.isEmpty()) {
       throw new IOException("Cannot use empty delimiter");
     }
 
     conf.set(CONF_DELIMITER_KEY, mDelim);
+    mFileHelper.storeToConf(conf);
   }
 
   /** {@inheritDoc} */
   @Override
   public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
-    super.initFromConf(conf);
-
-    mDelim = conf.get(CONF_DELIMITER_KEY, DEFAULT_DELIMITER);
-  }
-
-  /**
-   * Sets the delimiter string to use to separate keys and values on a line of text.
-   * This will throw an IllegalArgumentException if delim is null or empty.
-   *
-   * @param delim the delimiter string to use.
-   */
-  public void setDelimiter(String delim) {
-    if (null == delim || delim.isEmpty()) {
-      throw new IllegalArgumentException("Cannot use empty delimiter");
+    if (mOpened) {
+      throw new IllegalStateException("Cannot reinitialize; already opened a reader.");
     }
 
-    mDelim = delim;
-  }
-
-  /**
-   * Returns the delimiter string that separates keys and values in a line.
-   *
-   * @return the delimiter string.
-   */
-  public String getDelimiter() {
-    return mDelim;
+    mFileHelper.initFromConf(conf);
+    mDelim = conf.get(CONF_DELIMITER_KEY, DEFAULT_DELIMITER);
   }
 
   /** {@inheritDoc} */
   @Override
   public KeyValueStoreReader<String, String> open() throws IOException {
-    return new Reader(getConf(), getExpandedInputPaths(), getDelimiter());
+    mOpened = true;
+    return new Reader(mFileHelper.getConf(), mFileHelper.getExpandedInputPaths(), mDelim);
   }
 
   /**
@@ -196,7 +259,8 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
    * will have the non-null empty string as a value.)
    *
    * <p>Lookups for a key <i>K</i> will return the first record in the file where the key field
-   * has value <i>K</i>.</p>
+   * has value <i>K</i>. Where multiple files back the reader, the order in which files
+   * are processed is undefined.</p>
    */
   private static class Reader implements KeyValueStoreReader<String, String> {
     /** A map from keys to values loaded from the input files. */
@@ -206,12 +270,12 @@ public class TextFileKeyValueStore extends FileKeyValueStore<String, String> {
     private final String mDelim;
 
     /**
-     * Constructs a key value reader over a SequenceFile.
+     * Constructs a key value reader over text file(s).
      *
      * @param conf The Hadoop configuration.
-     * @param paths The path to the Avro file(s).
+     * @param paths The path to the text file(s).
      * @param delim the delimeter string.
-     * @throws IOException If the seqfile cannot be read.
+     * @throws IOException If the files cannot be read.
      */
     public Reader(Configuration conf, List<Path> paths, String delim) throws IOException {
       if (null == delim || delim.isEmpty()) {

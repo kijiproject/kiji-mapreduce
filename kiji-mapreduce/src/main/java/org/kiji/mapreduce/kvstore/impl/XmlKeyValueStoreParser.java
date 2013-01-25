@@ -50,7 +50,7 @@ import org.xml.sax.SAXException;
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
-import org.kiji.mapreduce.kvstore.lib.FileKeyValueStore;
+import org.kiji.mapreduce.kvstore.lib.TextFileKeyValueStore;
 
 /**
  * Utility that parses an XML file that specifies KeyValueStore implementations
@@ -139,7 +139,7 @@ public final class XmlKeyValueStoreParser {
           // in the default package. (Maybe try instantiating them first?)
           if (!storeClassStr.contains(".")) {
             // TODO: Make this a sane integration when these classes move to kiji-mr-lib
-            storeClassStr = FileKeyValueStore.class.getPackage().getName()
+            storeClassStr = TextFileKeyValueStore.class.getPackage().getName()
                 + "." + storeClassStr;
           }
 

@@ -96,12 +96,11 @@ public class TestAvroKVRecordKeyValueStore {
 
     // Open the store.
     Path avroFilePath = writeGenericRecordAvroFile();
-    AvroKVRecordKeyValueStore<Integer, CharSequence> store
-        = new AvroKVRecordKeyValueStore<Integer, CharSequence>(
-            new AvroKVRecordKeyValueStore.Options()
-            .withConfiguration(new Configuration())
-            .withInputPath(avroFilePath)
-            .withReaderSchema(readerSchema));
+    AvroKVRecordKeyValueStore<Integer, CharSequence> store =
+        AvroKVRecordKeyValueStore.builder()
+        .withConfiguration(new Configuration())
+        .withInputPath(avroFilePath)
+        .withReaderSchema(readerSchema).build();
     KeyValueStoreReader<Integer, CharSequence> reader = store.open();
 
     assertTrue(reader.containsKey(1));
@@ -116,11 +115,10 @@ public class TestAvroKVRecordKeyValueStore {
   public void testAvroKVRKVSWithoutSchema() throws IOException, InterruptedException {
     // Open the store.
     Path avroFilePath = writeGenericRecordAvroFile();
-    AvroKVRecordKeyValueStore<Integer, CharSequence> store
-        = new AvroKVRecordKeyValueStore<Integer, CharSequence>(
-            new AvroKVRecordKeyValueStore.Options()
-            .withConfiguration(new Configuration())
-            .withInputPath(avroFilePath));
+    AvroKVRecordKeyValueStore<Integer, CharSequence> store =
+        AvroKVRecordKeyValueStore.builder()
+        .withConfiguration(new Configuration())
+        .withInputPath(avroFilePath).build();
     KeyValueStoreReader<Integer, CharSequence> reader = store.open();
 
     assertTrue(reader.containsKey(1));

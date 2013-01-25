@@ -84,8 +84,7 @@ public class TestKijiGatherJobBuilder extends KijiClientTest {
   public static class UnconfiguredKVGatherer extends MyGatherer {
     @Override
     public Map<String, KeyValueStore<?, ?>> getRequiredStores() {
-      return RequiredStores.just("foostore",
-          new UnconfiguredKeyValueStore<String, Object>());
+      return RequiredStores.just("foostore", UnconfiguredKeyValueStore.builder().build());
     }
   }
 
@@ -205,7 +204,7 @@ public class TestKijiGatherJobBuilder extends KijiClientTest {
         .withCombiner(MyCombiner.class)
         .withReducer(MyReducer.class)
         .withOutput(new TextMapReduceJobOutput(new Path("mypath"), 10))
-        .withStore("foostore", new EmptyKeyValueStore<String, Object>())
+        .withStore("foostore", EmptyKeyValueStore.builder().build())
         .build();
 
     verify(kiji);

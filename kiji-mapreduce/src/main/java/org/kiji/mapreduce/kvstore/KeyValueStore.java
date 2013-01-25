@@ -42,7 +42,8 @@ import org.kiji.annotations.Inheritance;
  * <h1>Lifecycle in the Kiji ecosystem:</h1>
  * <p>A KeyValueStore is bound to a name by the KeyValueStoreClient.getRequiredStores() method.
  * At runtime, you may override these name-to-KeyValueStore bindings
- * by specifying xml configuration files.  See
+ * by specifying XML configuration files, or specifying individual name-to-store bindings
+ * programmatically by using a subclass of MapReduceJobBuilder (e.g., KijiProduceJobBuilder).  See
  * "Overriding KeyValueStore Definitions at Run-time" in the quick-start docs for details.
  * These KeyValueStores will be instantiated with the default constructor,
  * the XML will be parsed into configuration name-value pairs, and those will be passed to
@@ -56,6 +57,11 @@ import org.kiji.annotations.Inheritance;
  *
  * <p>To actually read key-value pairs, get a KeyValueStoreReader with the
  * <code>open()</code> method.  Close it when you're finished using it.</p>
+ *
+ * <p>KeyValueStore implementations may disallow calls to <code>initFromConf()</code>
+ * after calling <code>open()</code>; it's expected that an "opened" KeyValueStore
+ * must be treated as immutable. Implementations may throw InvalidStateException
+ * if you do this.</p>
  *
  * @param <K> the key type expected to be implemented by the keys to this store.
  * @param <V> the value type expected to be accessed by the keys to this store.

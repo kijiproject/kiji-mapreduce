@@ -20,12 +20,16 @@
 package org.kiji.mapreduce.kvstore.lib;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.hadoop.io.AvroKeyValue;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
 
@@ -35,13 +39,14 @@ import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
  *
  * <p>This KeyValueStore provides lookup access to an Avro container file by reading
  * the entire file into memory. The Avro file is assumed to contain records with (at
- * least) two fields, "key" and "value." This store will decompose the top-level
+ * least) two fields, named "key" and "value." This store will decompose the top-level
  * record into its two fields, and index the "value" field by the key.</p>
  *
- * <p>In addition to the properties listed in {@link FileKeyValueStore}, a kvstores
- * XML file may contain the following properties when specifying the behavior of this
- * class:</p>
+ * <p>A kvstores XML file may contain the following properties when specifying the
+ * behavior of this class:</p>
  * <ul>
+ *   <li><tt>dcache</tt> - True if files should be accessed by jobs through the DistributedCache.
+ *   <li><tt>paths</tt> - A comma-separated list of HDFS paths to files backing this store.
  *   <li><tt>avro.reader.schema</tt> - The reader schema to apply to records in the
  *       input file(s).</li>
  * </ul>
@@ -50,69 +55,127 @@ import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
  * @param <V> The type of the value field.
  */
 @ApiAudience.Public
-public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
+public final class AvroKVRecordKeyValueStore<K, V> implements KeyValueStore<K, V> {
   /** A wrapped store for looking up an Avro record by its 'key' field. */
   private final AvroRecordKeyValueStore<K, GenericRecord> mStore;
 
+  /** true if the user has called open(); cannot call initFromConf() after that. */
+  private boolean mOpened;
+
   /**
-   * An object to encapsulate the numerous options of an AvroKVRecordKeyValueStore.
+   * A Builder-pattern class that configures and creates new AvroKVRecordKeyValueStore
+   * instances. You should use this to specify the input to this KeyValueStore.
+   * Call the build() method to return a new, configured AvroKVRecordKeyValueStore instance.
    */
-  public static class Options extends FileKeyValueStore.Options<Options> {
-    private Schema mReaderSchema;
+  public static final class Builder {
+    private AvroRecordKeyValueStore.Builder mAvroRecordStoreBuilder;
+
+    /**
+     * Private, default constructor. Call the builder() method of this KeyValueStore
+     * to get a new builder instance.
+     */
+    private Builder() {
+      mAvroRecordStoreBuilder = AvroRecordKeyValueStore.builder();
+      mAvroRecordStoreBuilder.withKeyFieldName(AvroKeyValue.KEY_FIELD);
+    }
 
     /**
      * Sets the schema to read the records with.
+     * This may be null; the schema used when writing the input files will be used directly.
      *
      * @param schema The reader schema.
-     * @return This options instance.
+     * @return This builder instance.
      */
-    public Options withReaderSchema(Schema schema) {
-      mReaderSchema = schema;
+    public Builder withReaderSchema(Schema schema) {
+      mAvroRecordStoreBuilder.withReaderSchema(schema);
       return this;
     }
 
     /**
-     * Gets the schema used to read the records.
+     * Sets the Hadoop configuration instance to use.
      *
-     * @return The Avro reader schema.
+     * @param conf The configuration.
+     * @return This builder instance.
      */
-    public Schema getReaderSchema() {
-      return mReaderSchema;
+    public Builder withConfiguration(Configuration conf) {
+      mAvroRecordStoreBuilder.withConfiguration(conf);
+      return this;
     }
+
+    /**
+     * Adds a path to the list of files to load.
+     *
+     * @param path The input file/directory path.
+     * @return This builder instance.
+     */
+    public Builder withInputPath(Path path) {
+      mAvroRecordStoreBuilder.withInputPath(path);
+      return this;
+    }
+
+    /**
+     * Replaces the current list of files to load with the set of files
+     * specified as an argument.
+     *
+     * @param paths The input file/directory paths.
+     * @return This builder instance.
+     */
+    public Builder withInputPaths(List<Path> paths) {
+      mAvroRecordStoreBuilder.withInputPaths(paths);
+      return this;
+    }
+
+    /**
+     * Sets a flag indicating the use of the DistributedCache to distribute
+     * input files.
+     *
+     * @param enabled true if the DistributedCache should be used, false otherwise.
+     * @return This builder instance.
+     */
+    public Builder withDistributedCache(boolean enabled) {
+      mAvroRecordStoreBuilder.withDistributedCache(enabled);
+      return this;
+    }
+
+    /**
+     * Build a new AvroKVRecordKeyValueStore instance.
+     *
+     * @param <K> the key type used to look up each record.
+     * @param <V> the value type returned by each record.
+     * @return the initialized KeyValueStore.
+     */
+    public <K, V> AvroKVRecordKeyValueStore<K, V> build() {
+      AvroRecordKeyValueStore<K, GenericRecord> delegateStore = mAvroRecordStoreBuilder.build();
+      return new AvroKVRecordKeyValueStore<K, V>(delegateStore);
+    }
+  }
+
+  /**
+   * Creates a new AvroKVRecordKeyValueStore.Builder instance that can be used
+   * to configure and create a new KeyValueStore.
+   *
+   * @return a new Builder instance.
+   */
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
    * Constructs an AvroKVRecordKeyValueStore.
    *
-   * @param options The options for configuring the store.
+   * @param delegateStore the underlying AvroRecordKeyValueStore to use.
    */
-  public AvroKVRecordKeyValueStore(Options options) {
-    super(options);
-    mStore = new AvroRecordKeyValueStore<K, GenericRecord>(new AvroRecordKeyValueStore.Options()
-        .withConfiguration(options.getConfiguration())
-        .withInputPaths(options.getInputPaths())
-        .withDistributedCache(options.getUseDistributedCache())
-        .withReaderSchema(options.getReaderSchema())
-        .withKeyFieldName(AvroKeyValue.KEY_FIELD));
+  private AvroKVRecordKeyValueStore(AvroRecordKeyValueStore<K, GenericRecord> delegateStore) {
+    mStore = delegateStore;
   }
 
   /**
-   * Constructs an unconfigured AvroKVRecordKeyValueStore.
-   *
-   * <p>Do not use this constructor. It is for instantiation via
-   * ReflectionUtils.newInstance().</p>
+   * Default constructor. Used only for reflection. You should create and configure
+   * AvroKVRecordKeyValueStore instances by using a builder;
+   * call AvroKVRecordKeyValueStore.builder() to get a new builder instance.
    */
   public AvroKVRecordKeyValueStore() {
-    this(new Options());
-  }
-
-  /**
-   * Sets the reader schema to use for the avro container file records.
-   *
-   * @param readerSchema The reader schema.
-   */
-  public void setReaderSchema(Schema readerSchema) {
-    mStore.setReaderSchema(readerSchema);
+    this(AvroRecordKeyValueStore.builder().<K, GenericRecord>build());
   }
 
   /** {@inheritDoc} */
@@ -124,16 +187,17 @@ public class AvroKVRecordKeyValueStore<K, V> extends FileKeyValueStore<K, V> {
   /** {@inheritDoc} */
   @Override
   public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
+    if (mOpened) {
+      throw new IllegalStateException("Cannot reinitialize; already opened a reader.");
+    }
+
     mStore.initFromConf(conf);
   }
 
   /** {@inheritDoc} */
   @Override
   public KeyValueStoreReader<K, V> open() throws IOException {
-    // Delay mStore's input path configuration until here,
-    // because setInputPaths(), etc. get called in our FileKeyValueStore's c'tor.
-    // So make sure we use the right input paths that we were configured with.
-    mStore.setInputPaths(getInputPaths());
+    mOpened = true;
     return new Reader<K, V>(mStore);
   }
 

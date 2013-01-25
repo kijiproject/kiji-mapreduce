@@ -31,14 +31,70 @@ import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
  * calling storeToConf() to ensure that the user replaces this "default"
  * with a proper KeyValueStore on the command line.
  *
+ * <p>Calls to open() will throw IllegalStateException</p>
+ *
  * @param <K> the key type for the store.
  * @param <V> the value type for the store.
  */
 @ApiAudience.Public
-public class UnconfiguredKeyValueStore<K, V> implements KeyValueStore<K, V> {
+public final class UnconfiguredKeyValueStore<K, V> implements KeyValueStore<K, V> {
+
+  /**
+   * A Builder-pattern class that creates new UnconfiguredKeyValueStore
+   * instances. You should use this to specify the input to this KeyValueStore.
+   * Call the build() method to return a new UnconfiguredKeyValueStore instance.
+   *
+   * @param <K> The type of the key field for the store.
+   * @param <V> The type of value field for the store.
+   */
+  public static final class Builder<K, V> {
+    /**
+     * Private, default constructor. Call the builder() method of this KeyValueStore
+     * to get a new builder instance.
+     */
+    private Builder() {
+    }
+
+    /**
+     * Build a new UnconfiguredKeyValueStore instance.
+     *
+     * @return the initialized KeyValueStore.
+     */
+    public UnconfiguredKeyValueStore<K, V> build() {
+      return new UnconfiguredKeyValueStore<K, V>();
+    }
+  }
+
+  /**
+   * Creates a new UnconfiguredKeyValueStore.Builder instance that can be used
+   * to create a new KeyValueStore.
+   *
+   * @param <KT> The type of the key field.
+   * @param <VT> The type of the value field.
+   * @return a new Builder instance.
+   */
+  public static <KT, VT> Builder<KT, VT> builder() {
+    return new Builder<KT, VT>();
+  }
 
   /** Construct the definition of an unconfigured KeyValueStore. */
-  public UnconfiguredKeyValueStore() {
+  private UnconfiguredKeyValueStore() {
+  }
+
+  /** singleton instance. */
+  private static final UnconfiguredKeyValueStore<?, ?> INSTANCE =
+      new UnconfiguredKeyValueStore();
+
+  /**
+   * Returns a singleton UnconfiguredKeyValueStore instance.
+   *
+   * @param <KT> The type of the key field.
+   * @param <VT> The type of the value field.
+   * @return a singleton UnconfiguredKeyValueStore instance.
+   */
+  @SuppressWarnings("unchecked")
+  public static <KT, VT> UnconfiguredKeyValueStore<KT, VT> get() {
+    return (UnconfiguredKeyValueStore<KT, VT>) INSTANCE;
   }
 
   /** {@inheritDoc} */
@@ -55,10 +111,15 @@ public class UnconfiguredKeyValueStore<K, V> implements KeyValueStore<K, V> {
         + "You must override this on the command line or in a JobBuilder.");
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Throws IllegalStateException; you cannot open an unconfigured store.
+   *
+   * @throws IllegalStateException because you cannot open an unconfigured store.
+   * @return nothing, since it will always throw IllegalStateException.
+   */
   @Override
   public KeyValueStoreReader<K, V> open() {
-    return null;
+    throw new IllegalStateException("Cannot open an unconfigured store");
   }
 
   /** {@inheritDoc} */
@@ -72,9 +133,8 @@ public class UnconfiguredKeyValueStore<K, V> implements KeyValueStore<K, V> {
       return false;
     }
 
-    @SuppressWarnings("unchecked")
-    UnconfiguredKeyValueStore<K, V> other = (UnconfiguredKeyValueStore<K, V>) otherObj;
-    return other == this;
+    // All unconfigured instances are equal.
+    return true;
   }
 
   /** {@inheritDoc} */

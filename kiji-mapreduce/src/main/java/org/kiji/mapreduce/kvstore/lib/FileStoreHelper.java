@@ -39,34 +39,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.util.Lists;
 
 /**
- * Abstract base class that provides common functionality to file-backed
- * KeyValueStore implementations, such as the ability to use directory
- * globbing, the DistributedCache, etc.
- *
- * <p>When specifying a file-backed KeyValueStore in a kvstores XML file,
- * the following properties may be specified:</p>
- * <ul>
- *   <li><tt>paths</tt> - A comma-delimited list of HDFS paths to files that
- *       should be included in the KeyValueStore.</li>
- *   <li><tt>dcache</tt> - A boolean value ("<tt>true</tt>" or "<tt>false</tt>")
- *       specifying whether the input files should be sent to tasks via the
- *       DistributedCache or not. (The default is <tt>true</tt>.)</li>
- * </ul>
- *
- * @param <K> the key type expected to be implemented by the keys to this store.
- * @param <V> the value type expected to be accessed by keys to this store.
+ * Helper class that manages filenames and distributed cache functionality
+ * for KeyValueStore implementations that work with files or collections
+ * of files.
  */
-@ApiAudience.Public
-public abstract class FileKeyValueStore<K, V>
-    implements Configurable, KeyValueStore<K, V> {
+@ApiAudience.Private
+final class FileStoreHelper implements Configurable {
 
   private static final Logger LOG = LoggerFactory.getLogger(
-      FileKeyValueStore.class.getName());
+      FileStoreHelper.class.getName());
 
   /**
    * Configuration key for the KeyValueStore definition that sets whether input files are
@@ -110,17 +95,20 @@ public abstract class FileKeyValueStore<K, V>
   private List<Path> mInputPaths;
 
   /**
-   * Input configuration options that configure a file-backed KeyValueStore.
+   * A class that builds configured FileStoreHelper instances.
    *
-   * @param <T> the type of the options class.
+   * <p>This object is not exposed to users directly. It is used via composition
+   * in other (FooFile)KeyValueStore.Builder instances. If you add a method here,
+   * you should reflect this via composition in the other file-backed store builder
+   * APIs.</p>
    */
-  public static class Options<T extends Options<?>> {
+  static final class Builder {
     private Configuration mConf;
     private List<Path> mInputPaths;
     private boolean mUseDCache;
 
-    /** Default constructor. */
-    public Options() {
+    /** private constructor. */
+    private Builder() {
       mInputPaths = new ArrayList<Path>();
       mUseDCache = USE_DCACHE_DEFAULT;
       mConf = new Configuration();
@@ -130,24 +118,22 @@ public abstract class FileKeyValueStore<K, V>
      * Sets the Hadoop configuration instance to use.
      *
      * @param conf The configuration.
-     * @return This options instance.
+     * @return This builder instance.
      */
-    @SuppressWarnings("unchecked")
-    public T withConfiguration(Configuration conf) {
+    public Builder withConfiguration(Configuration conf) {
       mConf = conf;
-      return (T) this;
+      return this;
     }
 
     /**
      * Adds a path to the list of files to load.
      *
      * @param path The input file/directory path.
-     * @return This options instance.
+     * @return This builder instance.
      */
-    @SuppressWarnings("unchecked")
-    public T withInputPath(Path path) {
+    public Builder withInputPath(Path path) {
       mInputPaths.add(path);
-      return (T) this;
+      return this;
     }
 
     /**
@@ -155,72 +141,65 @@ public abstract class FileKeyValueStore<K, V>
      * specified as an argument.
      *
      * @param paths The input file/directory paths.
-     * @return This options instance.
+     * @return This builder instance.
      */
-    @SuppressWarnings("unchecked")
-    public T withInputPaths(List<Path> paths) {
+    public Builder withInputPaths(List<Path> paths) {
       mInputPaths.clear();
       mInputPaths.addAll(paths);
-      return (T) this;
+      return this;
     }
-
 
     /**
      * Sets a flag indicating the use of the DistributedCache to distribute
      * input files.
      *
      * @param enabled true if the DistributedCache should be used, false otherwise.
-     * @return This options instance.
+     * @return This builder instance.
      */
-    @SuppressWarnings("unchecked")
-    public T withDistributedCache(boolean enabled) {
+    public Builder withDistributedCache(boolean enabled) {
       mUseDCache = enabled;
-      return (T) this;
+      return this;
     }
 
     /**
-     * Gets the configuration instance.
+     * Builds and returns a new FileStoreHelper instance.
      *
-     * @return The configuration.
+     * @return a new, configured FileStoreHelper.
      */
-    public Configuration getConfiguration() {
-      return mConf;
-    }
-
-    /**
-     * Gets the list of paths to the files/directories to load.
-     *
-     * @return The input file path.
-     */
-    public List<Path> getInputPaths() {
-      return mInputPaths;
-    }
-
-    /**
-     * Gets the flag that determines whether the DistributedCache should be used.
-     *
-     * @return true if the DistributedCache should be used for the input files.
-     */
-    public boolean getUseDistributedCache() {
-      return mUseDCache;
+    public FileStoreHelper build() {
+      return new FileStoreHelper(mConf, mInputPaths, mUseDCache);
     }
   }
 
-  /** Default constructor. This is for use by ReflectionUtils; you should not use it. */
-  public FileKeyValueStore() {
-    this(new Options<Options<?>>());
+  /** @return a new FileStoreHelper.Builder instance. */
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
-   * Constructor that accepts an Options argument to configure it.
+   * Constructor invoked by Builder.build().
    *
-   * @param options the specifications for this FileKeyValueStore.
+   * @param conf the Configuration to use to access FileSystem instances.
+   * @param inputPaths the list of input paths to files backing this KeyValueStore
+   * @param useDCache is true if files should be accessed through the DistributedCache.
    */
-  public FileKeyValueStore(Options<? extends Options<?>> options) {
-    setConf(options.getConfiguration());
-    setEnableDistributedCache(options.getUseDistributedCache());
-    setInputPaths(options.getInputPaths());
+  private FileStoreHelper(Configuration conf, List<Path> inputPaths, boolean useDCache) {
+    mConf = conf;
+    mInputPaths = inputPaths;
+    mUseDCache = useDCache;
     mDCachePrefix = "";
+  }
+
+  /**
+   * Create an uninitialized FileStoreHelper. Used when KeyValueStore instances
+   * are being created via reflection; you should prefer to create FileStoreHelper
+   * instances through a FileStoreHelper.Builder. You can get an instance of this
+   * by calling FileStoreHelper.builder().
+   *
+   * @return a new, uninitialized FileStoreHelper.
+   */
+  static FileStoreHelper create() {
+    return FileStoreHelper.builder().build();
   }
 
   /** {@inheritDoc} */
@@ -233,51 +212,6 @@ public abstract class FileKeyValueStore<K, V>
   @Override
   public Configuration getConf() {
     return mConf;
-  }
-
-  /**
-   * Adds an input path to the list of files which should be loaded into this
-   * KeyValueStore.
-   *
-   * @param path the path to the file or directory to load.
-   */
-  public void addInputPath(Path path) {
-    mInputPaths.add(path);
-  }
-
-  /**
-   * Sets the input path which specifies the file or directory that should be
-   * loaded as the input for this KeyValueStore. This method overwrites the
-   * values set by any prior calls to setInputPath() or addInputPath().
-   *
-   * @param path the path to the file or directory to load.
-   */
-  public void setInputPath(Path path) {
-    mInputPaths.clear();
-    addInputPath(path);
-  }
-
-  /**
-   * Sets the input paths which specify the files or directories that should
-   * be loaded as the input for this KeyValueStore. This method overwrites
-   * any previous calls to setInputPath() or addInputPath().
-   *
-   * @param paths the list of paths to files or directories to load.
-   */
-  public void setInputPaths(List<Path> paths) {
-    mInputPaths = new ArrayList<Path>(paths);
-  }
-
-  /**
-   * Returns the set of input path(s) to be loaded by this KeyValueStore.
-   * If this is called within a MapReduce task, these may refer to local paths
-   * on disk. This may include directories and wildcards and other user-entered data.
-   *
-   * @return an unmodifiable list of input paths, backed by the underlying collection
-   *     within this KeyValueStore.
-   */
-  public List<Path> getInputPaths() {
-    return Collections.unmodifiableList(mInputPaths);
   }
 
   /**
@@ -346,6 +280,16 @@ public abstract class FileKeyValueStore<K, V>
   }
 
   /**
+   * Returns the set of raw input path(s) that were specified for read. This may
+   * include wildcards or directories.
+   *
+   * @return a copy of the set of raw input paths specified for read.
+   */
+  List<Path> getInputPaths() {
+    return mInputPaths;
+  }
+
+  /**
    * Returns the set of input path(s) that should be actually opened for read.
    * This set of paths may be on local disk (e.g., if the DistributedCache was used
    * to transmit the files), or in HDFS. This will not contain directory names nor
@@ -356,7 +300,7 @@ public abstract class FileKeyValueStore<K, V>
    * @throws IOException if there is an error communicating with the underlying
    *     FileSystem while expanding paths and globs.
    */
-  public List<Path> getExpandedInputPaths() throws IOException {
+  List<Path> getExpandedInputPaths() throws IOException {
     // If we've read a bunch of files from the DistributedCache's local dir,
     // no further unglobbing is necessary. Just return the values.
     if (!mDCachePrefix.isEmpty()) {
@@ -379,26 +323,10 @@ public abstract class FileKeyValueStore<K, V>
   }
 
   /**
-   * Sets a flag that enables or disables the use of the DistributedCache to manage
-   * the distribution of the input files to the tasks that back this KeyValueStore.
-   * This has no effect for KeyValueStores that are not used in MapReduce jobs.
-   * <b>The DistributedCache is enabled by default.</b> This should be disabled if your files
-   * are particularly large (the DCache limit is 10 GB per job, by default), but take
-   * care that too many mappers do not overwhelm the same HDFS nodes.
-   *
-   * <p>(Note that most file-backed KeyValueStore implementations read the entire
-   * set of input files into memory; 10 GB or more is unlikely to fit in the heap.)</p>
-   *
-   * @param enable a boolean that indicates whether the use of the distributed cache
-   *     should be enabled.
-   */
-  public void setEnableDistributedCache(boolean enable) {
-    mUseDCache = enable;
-  }
-
-  /**
    * If the cache URI prefix is already set, return this value. Otherwise create
-   * a new unique cache URI prefix.
+   * a new unique cache URI prefix. This does not memoize its return value;
+   * if mDCachePrefix is empty/null, multiple calls to this method will return
+   * unique values.
    *
    * @return the DistributedCache URI prefix for files used by this store.
    */
@@ -419,9 +347,14 @@ public abstract class FileKeyValueStore<K, V>
     }
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
+  /**
+   * Serializes file- and DistributedCache-specific properties associated
+   * with the KeyValueStore that owns this FileStoreHelper to the specified configuration.
+   *
+   * @param conf the configuration to populate.
+   * @throws IOException if there's an error serializing the state.
+   */
+  void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
     if (mInputPaths.isEmpty()) {
       throw new IOException("Required attribute not set: input path");
     }
@@ -467,9 +400,17 @@ public abstract class FileKeyValueStore<K, V>
     }
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
+  /**
+   * Deserializes file- and DistributedCache-specific properties associated
+   * with the KeyValueStore that owns this FileStoreHelper from the specified configuration.
+   *
+   * <p>This retains a reference to the KeyValueStoreConfiguration's backing Configuration
+   * instance to use when opening files specified by this configuration.</p>
+   *
+   * @param conf the configuration to read.
+   * @throws IOException if there's an error deserializing the configuration.
+   */
+  void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
     setConf(conf.getDelegate());
     mDCachePrefix = conf.get(CONF_DCACHE_PREFIX_KEY, "");
     LOG.debug("Input dCachePrefix: " + mDCachePrefix);

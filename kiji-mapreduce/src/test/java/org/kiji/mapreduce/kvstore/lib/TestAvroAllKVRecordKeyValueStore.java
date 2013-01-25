@@ -96,12 +96,11 @@ public class TestAvroAllKVRecordKeyValueStore {
 
     // Open the store.
     Path avroFilePath = writeGenericRecordAvroFile();
-    AvroKVRecordKeyValueStore<Integer, CharSequence> store
-        = new AvroKVRecordKeyValueStore<Integer, CharSequence>(
-            new AvroKVRecordKeyValueStore.Options()
+    AvroKVRecordKeyValueStore<Integer, CharSequence> store =
+        AvroKVRecordKeyValueStore.builder()
             .withConfiguration(new Configuration())
             .withInputPath(avroFilePath)
-            .withReaderSchema(readerSchema));
+            .withReaderSchema(readerSchema).build();
     KeyValueStoreReader<Integer, CharSequence> reader = store.open();
 
     assertTrue(reader.containsKey(1));

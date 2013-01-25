@@ -90,8 +90,7 @@ public class TestKijiProduceJobBuilder extends KijiClientTest {
   public static class UnconfiguredKVProducer extends MyProducer {
     @Override
     public Map<String, KeyValueStore<?, ?>> getRequiredStores() {
-      return RequiredStores.with("foostore",
-          new UnconfiguredKeyValueStore<String, Object>());
+      return RequiredStores.with("foostore", UnconfiguredKeyValueStore.get());
     }
   }
 
@@ -193,7 +192,7 @@ public class TestKijiProduceJobBuilder extends KijiClientTest {
     MapReduceJob produceJob = KijiProduceJobBuilder.create()
         .withInputTable(myTable)
         .withProducer(UnconfiguredKVProducer.class)
-        .withStore("foostore", new EmptyKeyValueStore<String, Object>())
+        .withStore("foostore", EmptyKeyValueStore.get())
         .withOutput(new KijiTableMapReduceJobOutput(myTable))
         .build();
 

@@ -25,33 +25,38 @@ import java.io.IOException;
 
 import org.apache.avro.Schema;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.junit.Test;
 
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
-import org.kiji.schema.KijiColumnName;
 
 public class TestKijiTableKeyValueStore {
+  /** @return an uninitialized store to test for initialization from a Configuration. */
+  private <T> KijiTableKeyValueStore<T> getUninitializedStore() {
+    return (KijiTableKeyValueStore<T>) ReflectionUtils.newInstance(
+        KijiTableKeyValueStore.class, new Configuration());
+  }
+
   @Test
   public void testSerialization() throws IOException {
     // Test that we can serialize a KijiTableKeyValueStore to a conf and resurrect it.
-    KijiTableKeyValueStore<String> input = new KijiTableKeyValueStore<String>();
-
-    input.setTableName("tbl");
-    input.setColumn(new KijiColumnName("some:column"));
-    input.setMinTimestamp(42);
-    input.setMaxTimestamp(512);
-    input.setCacheLimit(2121);
-    input.setReaderSchema(Schema.create(Schema.Type.STRING));
+    KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
+        .withTable("tbl")
+        .withColumn("some", "column")
+        .withMinTimestamp(42)
+        .withMaxTimestamp(512)
+        .withCacheLimit(2121)
+        .withReaderSchema(Schema.create(Schema.Type.STRING))
+        .build();
 
     KeyValueStoreConfiguration conf = KeyValueStoreConfiguration.fromConf(new Configuration());
 
     input.storeToConf(conf);
+    conf.getDelegate().set(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE
+        + ".0." + KeyValueStoreConfigSerializer.CONF_NAME, "the-store-name");
 
-    // TODO(WIBI-1534): Update the variable name that maps to the store name.
-    conf.getDelegate().set("kiji.produce.kvstore.name", "the-store-name");
-
-    KijiTableKeyValueStore<String> output = new KijiTableKeyValueStore<String>();
+    KijiTableKeyValueStore<String> output = getUninitializedStore();
     output.initFromConf(conf);
 
     assertEquals(input, output);
@@ -60,47 +65,46 @@ public class TestKijiTableKeyValueStore {
   @Test
   public void testOkWithoutSchema() throws IOException {
     // Serializing without an explicit reader schema is ok.
-    KijiTableKeyValueStore<String> input = new KijiTableKeyValueStore<String>();
-
-    input.setTableName("tbl");
-    input.setColumn(new KijiColumnName("some:column"));
-    input.setMinTimestamp(42);
-    input.setMaxTimestamp(512);
-    input.setCacheLimit(2121);
+    KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
+        .withTable("tbl")
+        .withColumn("some", "column")
+        .withMinTimestamp(42)
+        .withMaxTimestamp(512)
+        .withCacheLimit(2121)
+        .build();
 
     KeyValueStoreConfiguration conf = KeyValueStoreConfiguration.fromConf(
         new Configuration(false));
 
     input.storeToConf(conf);
-    conf.set(KeyValueStoreConfigSerializer.CONF_NAME, "the-store-name");
+    conf.getDelegate().set(KeyValueStoreConfiguration.KEY_VALUE_STORE_NAMESPACE
+        + ".0." + KeyValueStoreConfigSerializer.CONF_NAME, "the-store-name");
 
-    KijiTableKeyValueStore<String> output = new KijiTableKeyValueStore<String>();
+    KijiTableKeyValueStore<String> output = getUninitializedStore();
     output.initFromConf(conf);
 
     assertEquals(input, output);
   }
 
-  @Test(expected=IOException.class)
-  public void testRequiresTable() throws IOException {
+  @Test(expected=IllegalArgumentException.class)
+  public void testRequiresTable() {
     // Test that we need to set the table name, or it will fail to verify as input.
-    KijiTableKeyValueStore<String> input = new KijiTableKeyValueStore<String>();
-
-    input.setColumn(new KijiColumnName("some:column"));
-
-    KeyValueStoreConfiguration conf = KeyValueStoreConfiguration.fromConf(
-        new Configuration(false));
-    input.storeToConf(conf);
+    KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
+        .withColumn("some", "column")
+        .withMinTimestamp(42)
+        .withMaxTimestamp(512)
+        .withCacheLimit(2121)
+        .build();
   }
 
-  @Test(expected=IOException.class)
-  public void testRequiresColumn() throws IOException {
+  @Test(expected=IllegalArgumentException.class)
+  public void testRequiresColumn() {
     // Test that we need to set the column to read.
-    KijiTableKeyValueStore<String> input = new KijiTableKeyValueStore<String>();
-
-    input.setTableName("foo");
-
-    KeyValueStoreConfiguration conf = KeyValueStoreConfiguration.fromConf(
-        new Configuration(false));
-    input.storeToConf(conf);
+    KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
+        .withTable("foo")
+        .withMinTimestamp(42)
+        .withMaxTimestamp(512)
+        .withCacheLimit(2121)
+        .build();
   }
 }
