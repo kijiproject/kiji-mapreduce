@@ -105,8 +105,9 @@ public final class KijiMapReduceJob extends InternalMapReduceJob {
       // Warn about the error, but don't fail the job.
       LOG.warn("Exception while recording job history: " + e
           + " This does not affect the success of the job.");
-      LOG.warn("Please run: $KIJI_HOME/bin/kiji util " + KijiJobHistory.class.getCanonicalName()
-          + " --install");
+      if (null != kiji) {
+        LOG.warn("Please run: kiji job-history --install --kiji=" + kiji.getURI());
+      }
     } finally {
       IOUtils.closeQuietly(jobHistory);
       ReferenceCountableUtils.releaseQuietly(kiji);
