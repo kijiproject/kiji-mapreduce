@@ -210,7 +210,7 @@ public final class AvroRecordKeyValueStore<K, V extends IndexedRecord>
   }
 
   /**
-   * Default constructor. Used only for reflection. You should create and configure
+   * Reflection-only constructor. Used only for reflection. You should create and configure
    * AvroRecordKeyValueStore instances by using a builder; call AvroRecordKeyValueStore.builder()
    * to get a new builder instance.
    */

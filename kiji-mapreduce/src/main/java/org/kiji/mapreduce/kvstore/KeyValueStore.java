@@ -71,19 +71,19 @@ import org.kiji.annotations.Inheritance;
 public interface KeyValueStore<K, V> {
 
   /**
-   * Override to serialize the state of your KeyValueStore into
+   * Serializes the state of the KeyValueStore into
    * the provided KeyValueStoreConfiguration.
    *
    * @param conf The KeyValueStoreConfiguration to serialize state into.
    *     This will be placed in a unique namespace of the job Configuration,
-   *     so you have carte blanche to write any key here.
+   *     so it can write any key.
    * @throws IOException if there is an error writing state to the configuration.
    */
   void storeToConf(KeyValueStoreConfiguration conf) throws IOException;
 
   /**
-   * Override to deserialize the state of this KeyValueStore from the
-   * KeyValueStoreConviguration.
+   * Deserializes the state of this KeyValueStore from the
+   * KeyValueStoreConfiguration.
    *
    * @param conf The KeyValueStoreConfiguration storing state for this KeyValueStore.
    * @throws IOException if there is an error reading from the configuration.
@@ -92,6 +92,8 @@ public interface KeyValueStore<K, V> {
 
   /**
    * Opens an instance of this KeyValueStore for access by clients.
+   * After calling this method, some implementations may deny subsequent calls to
+   * initFromConf() by throwing InvalidStateException.
    *
    * @return the KeyValueStoreReader associated with this KeyValueStore.
    * @throws IOException if there is an error opening the underlying storage resource.

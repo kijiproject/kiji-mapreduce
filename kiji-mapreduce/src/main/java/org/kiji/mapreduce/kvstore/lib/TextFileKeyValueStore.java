@@ -202,7 +202,7 @@ public final class TextFileKeyValueStore implements KeyValueStore<String, String
   }
 
   /**
-   * Default constructor. Used only for reflection. You should create and configure
+   * Reflection-only constructor. Used only for reflection. You should create and configure
    * TextFileKeyValueStore instances by using a builder; call TextFileKeyValueStore.builder()
    * to get a new builder instance.
    */

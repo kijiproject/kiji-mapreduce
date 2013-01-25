@@ -76,8 +76,12 @@ public final class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
     return new Builder<KT, VT>();
   }
 
-  /** Construct the definition of an empty KeyValueStore. */
-  private EmptyKeyValueStore() {
+  /**
+   * Reflection-only constructor. Used only for reflection. You should create
+   * EmptyKeyValueStore instances by using a builder or factory method.
+   * Call EmptyKeyValueStore.get() to get a singleton instance.
+   */
+  public EmptyKeyValueStore() {
     mReaderInstance = new EmptyKeyValueReader();
   }
 

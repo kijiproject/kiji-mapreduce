@@ -22,22 +22,20 @@ package org.kiji.mapreduce.kvstore;
 import java.util.Map;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.annotations.Inheritance;
 
 /**
- * <p>KeyValueStoreClient defines a mapping between store names and their
+ * <p>A KeyValueStoreClient defines a mapping between store names and their
  * KeyValueStore implementations via the getRequiredStores() method.
  * When used in the Kiji framework, you may override these default implementations
  * at runtime with either MapReduceJobBuilder.withStore()
  * or MapReduceJobBuilder.withStoreBindingsFile().</p>
  *
- * <p>There is not currently a way to bind stores within Fresheners.
- * As a result, if you use a Producer in a Freshener, you will need to specify
- * implementations for each KeyValueStore in the getRequiredStores() method.</p>
- *
  * <p>How the KeyValueStores are surfaced to a KeyValueStoreClient is undefined.
  * Look to the implementing class for details on how these are surfaced.</p>
  */
 @ApiAudience.Public
+@Inheritance.Extensible
 public interface KeyValueStoreClient {
   /**
    * <p>Returns a mapping that specifies the names of all key-value stores that must be loaded

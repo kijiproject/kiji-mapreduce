@@ -79,7 +79,7 @@ public final class KeyValueStoreConfiguration {
 
   /**
    * Constructs a new KeyValueStoreConfiguration that will read and write
-   * values to the parent Configuration, under the specified namespace.
+   * values to the parent Configuration, under an arbitrary namespace.
    *
    * @param parent The Configuration to back this KeyValueStoreConfiguration.
    * @param namespace The namespace to write to.

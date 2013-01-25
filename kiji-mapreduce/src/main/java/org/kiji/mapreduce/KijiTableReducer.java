@@ -61,7 +61,7 @@ public abstract class KijiTableReducer<K, V>
     mTableContext = KijiTableContextFactory.create(hadoopContext);
 
     // Create any KeyValueStore instances necessary.
-    mKeyValueStores = new KeyValueStoreReaderFactory(conf);
+    mKeyValueStores = KeyValueStoreReaderFactory.create(conf);
   }
 
   /** {@inheritDoc} */
@@ -79,6 +79,7 @@ public abstract class KijiTableReducer<K, V>
     Preconditions.checkState(mTableContext != null);
     mTableContext.close();
     mTableContext = null;
+    mKeyValueStores.close();
     super.cleanup(hadoopContext);
   }
 

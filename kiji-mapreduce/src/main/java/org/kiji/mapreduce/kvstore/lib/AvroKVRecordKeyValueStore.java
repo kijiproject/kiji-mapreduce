@@ -170,7 +170,7 @@ public final class AvroKVRecordKeyValueStore<K, V> implements KeyValueStore<K, V
   }
 
   /**
-   * Default constructor. Used only for reflection. You should create and configure
+   * Reflection-only constructor. Used only for reflection. You should create and configure
    * AvroKVRecordKeyValueStore instances by using a builder;
    * call AvroKVRecordKeyValueStore.builder() to get a new builder instance.
    */

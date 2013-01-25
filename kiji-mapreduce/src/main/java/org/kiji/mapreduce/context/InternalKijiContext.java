@@ -46,7 +46,7 @@ public class InternalKijiContext implements KijiContext {
    */
   InternalKijiContext(TaskInputOutputContext context) throws IOException {
     mHadoopContext = context;
-    mKeyValueStoreFactory = new KeyValueStoreReaderFactory(context.getConfiguration());
+    mKeyValueStoreFactory = KeyValueStoreReaderFactory.create(context.getConfiguration());
   }
 
   /** @return the underlying Hadoop MapReduce context. */
@@ -58,7 +58,7 @@ public class InternalKijiContext implements KijiContext {
   @Override
   public <K, V> KeyValueStoreReader<K, V> getStore(String storeName) throws IOException,
       InterruptedException {
-    return mKeyValueStoreFactory.getStore(storeName);
+    return mKeyValueStoreFactory.openStore(storeName);
   }
 
   /** {@inheritDoc} */
@@ -100,6 +100,7 @@ public class InternalKijiContext implements KijiContext {
   /** {@inheritDoc} */
   @Override
   public void close() throws IOException {
-    // Do nothing by default.
+    // Close KeyValueStoreReaders we opened.
+    mKeyValueStoreFactory.close();
   }
 }

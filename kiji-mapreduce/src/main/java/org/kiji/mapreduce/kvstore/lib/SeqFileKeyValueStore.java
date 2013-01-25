@@ -145,8 +145,8 @@ public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
   }
 
   /**
-   * Default constructor. Used only for reflection. You should create
-   * and configure new SeqFileKeyValueStore instances by using a builder;
+   * Reflection-only constructor. Used only for reflection. You should create and configure
+   * new SeqFileKeyValueStore instances by using a builder;
    * call SeqFileKeyValueStore.builder() to get a new builder instance.
    */
   public SeqFileKeyValueStore() {

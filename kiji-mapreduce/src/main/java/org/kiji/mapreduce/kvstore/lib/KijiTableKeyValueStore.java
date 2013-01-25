@@ -257,9 +257,9 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
   }
 
   /**
-   * Default constructor. Used only for reflection. You should create and configure
-   * KijiTableFileKeyValueStore instances by using a builder; call
-   * KijiTableFileKeyValueStore.builder() to get a new builder instance.
+   * Reflection-only constructor. Used only for reflection. You should create and configure
+   * KijiTableKeyValueStore instances by using a builder;
+   * call KijiTableKeyValueStore.builder() to get a new builder instance.
    */
   public KijiTableKeyValueStore() {
     this(builder());
@@ -270,7 +270,7 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
    *
    * @param builder the builder instance to read configuration from.
    */
-  public KijiTableKeyValueStore(Builder builder) {
+  private KijiTableKeyValueStore(Builder builder) {
     mTableName = builder.mTableName;
     mColumn = builder.mColumn;
     mMinTs = builder.mMinTs;

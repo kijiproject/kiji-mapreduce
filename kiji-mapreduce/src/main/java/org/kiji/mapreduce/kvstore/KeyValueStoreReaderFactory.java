@@ -42,7 +42,7 @@ import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
  * if available, rather than creating a new store reader for a given named
  * store.</p>
  */
-@ApiAudience.Private
+@ApiAudience.Public
 public final class KeyValueStoreReaderFactory implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(
       KeyValueStoreReaderFactory.class.getName());
@@ -54,30 +54,31 @@ public final class KeyValueStoreReaderFactory implements Closeable {
   private final Map<String, KeyValueStoreReader<?, ?>> mStoreReaders;
 
   /** Creates an empty KeyValueStoreReaderFactory. */
-  public KeyValueStoreReaderFactory() {
+  private KeyValueStoreReaderFactory() {
     this(Collections.<String, KeyValueStore<?, ?>>emptyMap());
   }
 
   /**
-   * Creates a KeyValueStoreReaderFactory.
+   * Creates a KeyValueStoreReaderFactory backed by a map of specific store bindings.
    *
    * @param storeBindings defines the set of KeyValueStores available, and the
    *     names by which they are registered.
    */
-  public KeyValueStoreReaderFactory(Map<String, KeyValueStore<?, ?>> storeBindings) {
-    mKeyValueStores = Collections.unmodifiableMap(storeBindings);
+  private KeyValueStoreReaderFactory(Map<String, KeyValueStore<?, ?>> storeBindings) {
+    mKeyValueStores = Collections.unmodifiableMap(
+        new HashMap<String, KeyValueStore<?, ?>>(storeBindings));
     mStoreReaders = Collections.synchronizedMap(new HashMap<String, KeyValueStoreReader<?, ?>>());
   }
 
   /**
-   * Creates a KeyValueStoreReaderFactory.
+   * Creates a KeyValueStoreReaderFactory backed by store bindings specified in a Configuration.
    *
    * @param conf the Configuration from which a set of KeyValueStore bindings should
    *     be deserialized and initialized.
    * @throws IOException if there is an error deserializing or initializing a
    *     KeyValueStore instance.
    */
-  public KeyValueStoreReaderFactory(Configuration conf) throws IOException {
+  private KeyValueStoreReaderFactory(Configuration conf) throws IOException {
     Map<String, KeyValueStore<?, ?>> keyValueStores = new HashMap<String, KeyValueStore<?, ?>>();
     int numKvStores = conf.getInt(KeyValueStoreConfigSerializer.CONF_KEY_VALUE_STORE_COUNT,
         KeyValueStoreConfigSerializer.DEFAULT_KEY_VALUE_STORE_COUNT);
@@ -107,9 +108,44 @@ public final class KeyValueStoreReaderFactory implements Closeable {
     mStoreReaders = Collections.synchronizedMap(new HashMap<String, KeyValueStoreReader<?, ?>>());
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Creates an empty KeyValueStoreReaderFactory.
+   *
+   * @return a new, empty KeyValueStoreReaderFactory.
+   */
+  public static KeyValueStoreReaderFactory createEmpty() {
+    return new KeyValueStoreReaderFactory();
+  }
+
+  /**
+   * Creates a KeyValueStoreReaderFactory backed by a map of specific store bindings.
+   *
+   * @param storeBindings defines the set of KeyValueStores available, and the
+   *     names by which they are registered.
+   * @return a new KeyValueStoreReaderFactory backed by a copy of the specified storeBindings.
+   */
+  public static KeyValueStoreReaderFactory create(Map<String, KeyValueStore<?, ?>> storeBindings) {
+    return new KeyValueStoreReaderFactory(storeBindings);
+  }
+
+  /**
+   * Creates a KeyValueStoreReaderFactory backed by store bindings specified in a Configuration.
+   *
+   * @param conf the Configuration from which a set of KeyValueStore bindings should
+   *     be deserialized and initialized.
+   * @throws IOException if there is an error deserializing or initializing a
+   *     KeyValueStore instance.
+   * @return a new KeyValueStoreReaderFactory backed by the storeBindings specified in conf.
+   */
+  public static KeyValueStoreReaderFactory create(Configuration conf) throws IOException {
+    return new KeyValueStoreReaderFactory(conf);
+  }
+
+  /**
+   * Closes all KeyValueStoreReaders opened by this factory.
+   */
   @Override
-  public void close() throws IOException {
+  public void close() {
     for (KeyValueStoreReader<?, ?> reader : mStoreReaders.values()) {
       if (null != reader && reader.isOpen()) {
         IOUtils.closeQuietly(reader);
@@ -124,7 +160,7 @@ public final class KeyValueStoreReaderFactory implements Closeable {
    * when you are done with it. (Or close this KeyValueStoreReaderFactory
    * when you are done with all stores.)</p>
    *
-   * <p>Calling getStore() multiple times on the same name will reuse the same
+   * <p>Calling openStore() multiple times on the same name will reuse the same
    * reader unless it is closed.</p>
    *
    * @param <K> The key type for the KeyValueStore.
@@ -135,7 +171,7 @@ public final class KeyValueStoreReaderFactory implements Closeable {
    * @throws IOException if there is an error opening the underlying storage resource.
    */
   @SuppressWarnings("unchecked")
-  public <K, V> KeyValueStoreReader<K, V> getStore(String storeName)
+  public <K, V> KeyValueStoreReader<K, V> openStore(String storeName)
       throws IOException {
     assert null != mStoreReaders && null != mKeyValueStores;
     if (null == mStoreReaders.get(storeName) || !mStoreReaders.get(storeName).isOpen()) {
@@ -149,11 +185,5 @@ public final class KeyValueStoreReaderFactory implements Closeable {
       mStoreReaders.put(storeName, reader);
     }
     return (KeyValueStoreReader<K, V>) mStoreReaders.get(storeName);
-  }
-
-  @Override
-  protected void finalize() throws Throwable {
-    close();
-    super.finalize();
   }
 }
