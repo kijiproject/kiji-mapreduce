@@ -41,6 +41,10 @@ import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
  * <p>This also manages a cache of opened readers, which will be returned
  * if available, rather than creating a new store reader for a given named
  * store.</p>
+ *
+ * <p>The {@link #close()} method of this object will close all KeyValueStoreReaders
+ * associated with it. You should call this when you are done with the
+ * readers, or close them all individually.</p>
  */
 @ApiAudience.Public
 public final class KeyValueStoreReaderFactory implements Closeable {

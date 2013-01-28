@@ -32,7 +32,11 @@ import org.kiji.annotations.Inheritance;
  * or MapReduceJobBuilder.withStoreBindingsFile().</p>
  *
  * <p>How the KeyValueStores are surfaced to a KeyValueStoreClient is undefined.
- * Look to the implementing class for details on how these are surfaced.</p>
+ * Look to the implementing class for details on how these are surfaced; e.g., in the Context
+ * objects supplied as arguments to Producers and Gatherers. If you are
+ * implementing your own handler for data using MapReduce or other means "from scratch",
+ * you may want to use a {@link KeyValueStoreReaderFactory} to deserialize a set of
+ * KeyValueStores from a Configuration object.</p>
  */
 @ApiAudience.Public
 @Inheritance.Extensible
@@ -43,7 +47,7 @@ public interface KeyValueStoreClient {
    * used if the user does not specify alternate locations/implementations.
    * It is an error for any of these default implementations to be null.
    * If you want to defer KeyValueStore definition to runtime, bind a name
-   * to the {@link org.kiji.mapreduce.kvstore.UnconfiguredKeyValueStore} instead.<p>
+   * to the {@link org.kiji.mapreduce.kvstore.lib.UnconfiguredKeyValueStore} instead.<p>
    *
    * @return a map from store names to default KeyValueStore implementations.
    */

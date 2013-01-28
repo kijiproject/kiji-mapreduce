@@ -28,6 +28,10 @@ import org.kiji.annotations.Inheritance;
 /**
  * Allows users to read from a KeyValueStore.
  *
+ * <p>A KeyValueStoreReader is created and configured by {@link
+ * org.kiji.mapreduce.kvstore.KeyValueStore#open()}. From there, it performs the required
+ * I/O or computational operations required to retrieve values by key.</p>
+ *
  * <p>By default, this data is presented to you as a read-only, non-iterable map.
  * Only get() requests for an explicit key are supported by default, though some
  * implementations may offer iteration.

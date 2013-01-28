@@ -27,11 +27,15 @@ import org.kiji.annotations.Inheritance;
 /**
  * <p>A KeyValueStore specifies all the resources needed to surface
  * key-value pairs from some backing store.  This may be defined on
- * files, a Kiji table, or some other resource.
- * See the org.kiji.mapreduce.kvstore.lib package for implementations.</p>
+ * files, a Kiji table, or some other resource like a different NoSQL database.
+ * See the {@link org.kiji.mapreduce.kvstore.lib} package for implementations.</p>
+ *
+ * <p>The {@link org.kiji.mapreduce.kvstore.KeyValueStoreReader} interface defines
+ * an implementation that actually accesses these key-value pairs, given
+ * sufficient configuration info from the KeyValueStore itself.</p>
  *
  * <p>Within the Kiji framework, a KeyValueStore may be used within a MapReduce job,
- * or outside of one, in a Freshener.  In a MapReduce job, it will have access
+ * or outside of one, e.g. in a Freshener.  In a MapReduce job, it will have access
  * to the job Configuration.  When run inside a Freshener, it will only have
  * Kiji connection resources.
  * As a result, you should be careful that your KeyValueStore implementation
@@ -49,11 +53,13 @@ import org.kiji.annotations.Inheritance;
  * the XML will be parsed into configuration name-value pairs, and those will be passed to
  * <code>initFromConf()</code>.
  *
- * <p>In a MapReduce job, configuration will be serialized using <code>storeToConf()</code>,
- * which copies data into the job Configuration.
- * On the mapper side, this KeyValueStore will be deserialized by calling the
- * default constructor (so it's important that you specify one),
- * then initialized with a single call to <code>initFromConf()</code>.</p>
+ * <p>In a MapReduce job, configuration will be serialized using
+ * <code>storeToConf()</code>, which copies data into the job Configuration.  On the
+ * mapper side, this KeyValueStore will be deserialized by instantiating a KeyValueStore
+ * instance through reflection, which uses the default constructor then initialized with a
+ * single call to <code>initFromConf()</code>.  <b>Thus, if you implement this interface,
+ * it is required that you provide a public no-argument constructor so your KeyValueStore
+ * can be used within MapReduce.</b> </p>
  *
  * <p>To actually read key-value pairs, get a KeyValueStoreReader with the
  * <code>open()</code> method.  Close it when you're finished using it.</p>
