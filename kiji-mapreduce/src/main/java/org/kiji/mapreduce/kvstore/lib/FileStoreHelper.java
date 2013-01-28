@@ -46,9 +46,25 @@ import org.kiji.mapreduce.util.Lists;
  * Helper class that manages filenames and distributed cache functionality
  * for KeyValueStore implementations that work with files or collections
  * of files.
+ *
+ * <p>Your KeyValueStore can use a FileStoreHelper to manage all aspects of
+ * configuration of and deserialization regarding file names in a MapReduce
+ * job.</p>
+ *
+ * <p>Create a FileStoreHelper.Builder object using the builder() method;
+ * your own KeyValueStore's Builder should use composition to delegate
+ * responsibility for Configuration, file, and distributed cache control
+ * to this one. You should use this object's storeToConf() and initFromConf()
+ * methods within your own KeyValueStore's storeToConf() and initFromConf()
+ * methods.</p>
+ *
+ * <p>When reading files, use getExpandedInputPaths() to get a complete list
+ * of files to read. If the user has enabled the distributed cache, you will
+ * receive a set of local files to read. Otherwise, the initial HDFS paths
+ * will be used.</p>
  */
-@ApiAudience.Private
-final class FileStoreHelper implements Configurable {
+@ApiAudience.Public
+public final class FileStoreHelper implements Configurable {
 
   private static final Logger LOG = LoggerFactory.getLogger(
       FileStoreHelper.class.getName());
@@ -102,8 +118,8 @@ final class FileStoreHelper implements Configurable {
    * you should reflect this via composition in the other file-backed store builder
    * APIs.</p>
    */
-  @ApiAudience.Private
-  static final class Builder {
+  @ApiAudience.Public
+  public static final class Builder {
     private Configuration mConf;
     private List<Path> mInputPaths;
     private boolean mUseDCache;
@@ -269,12 +285,13 @@ final class FileStoreHelper implements Configurable {
 
   /**
    * Returns the set of raw input path(s) that were specified for read. This may
-   * include wildcards or directories.
+   * include wildcards or directories. You should use getExpandedInputPaths()
+   * to determine the set of files to actually read.
    *
    * @return a copy of the set of raw input paths specified for read.
    */
-  List<Path> getInputPaths() {
-    return mInputPaths;
+  public List<Path> getInputPaths() {
+    return Collections.unmodifiableList(new ArrayList<Path>(mInputPaths));
   }
 
   /**
@@ -283,12 +300,15 @@ final class FileStoreHelper implements Configurable {
    * to transmit the files), or in HDFS. This will not contain directory names nor
    * globs; it is expanded to the literal set of files to open.
    *
+   * <p>Each Path object returned is fully qualified, and represents an absolute
+   * path that should be opened by its associated FileSystem object.</p>
+   *
    * @return an unmodifiable list of input paths, backed by the underlying collection
    *     within this KeyValueStore.
    * @throws IOException if there is an error communicating with the underlying
    *     FileSystem while expanding paths and globs.
    */
-  List<Path> getExpandedInputPaths() throws IOException {
+  public List<Path> getExpandedInputPaths() throws IOException {
     // If we've read a bunch of files from the DistributedCache's local dir,
     // no further unglobbing is necessary. Just return the values.
     if (!mDCachePrefix.isEmpty()) {
@@ -342,7 +362,7 @@ final class FileStoreHelper implements Configurable {
    * @param conf the configuration to populate.
    * @throws IOException if there's an error serializing the state.
    */
-  void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
+  public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
     if (mInputPaths.isEmpty()) {
       throw new IOException("Required attribute not set: input path");
     }
@@ -398,7 +418,7 @@ final class FileStoreHelper implements Configurable {
    * @param conf the configuration to read.
    * @throws IOException if there's an error deserializing the configuration.
    */
-  void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
+  public void initFromConf(KeyValueStoreConfiguration conf) throws IOException {
     setConf(conf.getDelegate());
     mDCachePrefix = conf.get(CONF_DCACHE_PREFIX_KEY, "");
     LOG.debug("Input dCachePrefix: " + mDCachePrefix);

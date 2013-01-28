@@ -20,7 +20,6 @@
 package org.kiji.mapreduce.kvstore.lib;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -181,7 +180,7 @@ public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
   /** @return the raw input paths specified as input by the user. */
   public List<Path> getInputPaths() {
     // Visible chiefly for testing.
-    return Collections.unmodifiableList(mFileHelper.getInputPaths());
+    return mFileHelper.getInputPaths();
   }
 
   /** {@inheritDoc} */
