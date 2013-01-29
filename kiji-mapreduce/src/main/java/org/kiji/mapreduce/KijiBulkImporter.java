@@ -68,12 +68,6 @@ import org.kiji.annotations.Inheritance;
 public abstract class KijiBulkImporter<K, V>
     implements Configurable, KeyValueStoreClient {
 
-  /**
-   * Configuration key associated with the name of the KijiBulkImporter class.
-   * @see org.kiji.mapreduce.util.KijiBulkImporters.create(Configuration).
-   */
-  public static final String CONF_BULK_IMPORTER_CLASS = "kiji.bulk.importer.class";
-
   /** The Configuration of this producer. */
   private Configuration mConf;
 
