@@ -32,23 +32,23 @@ import org.kiji.annotations.Inheritance;
  *
  * <p>The {@link org.kiji.mapreduce.kvstore.KeyValueStoreReader} interface defines
  * an implementation that actually accesses these key-value pairs, given
- * sufficient configuration info from the KeyValueStore itself.</p>
+ * sufficient configuration info from the KeyValueStore itself. KeyValueStoreReaders
+ * are opened by the {@link #open()} method of KeyValueStore.</p>
  *
  * <p>Within the Kiji framework, a KeyValueStore may be used within a MapReduce job,
- * or outside of one, e.g. in a Freshener.  In a MapReduce job, it will have access
- * to the job Configuration.  When run inside a Freshener, it will only have
- * Kiji connection resources.
+ * or outside of one, e.g. in a streaming process.  In a MapReduce job, it will have access
+ * to the job Configuration. In other environments, it may not have access to the same
+ * resources.
  * As a result, you should be careful that your KeyValueStore implementation
- * can be run with the resources available in either environment.
+ * can be run with the resources available in any expected operating environment.
  * (For example, you should <i>not</i> use the DistributedCache
- * in <code>storeToConf()</code> when a KeyValueStore is used within a Freshener)</p>
+ * in <code>storeToConf()</code> when a KeyValueStore is used within a non-MapReduce process.)</p>
  *
  * <h1>Lifecycle in the Kiji ecosystem:</h1>
  * <p>A KeyValueStore is bound to a name by the KeyValueStoreClient.getRequiredStores() method.
  * At runtime, you may override these name-to-KeyValueStore bindings
  * by specifying XML configuration files, or specifying individual name-to-store bindings
- * programmatically by using a subclass of MapReduceJobBuilder (e.g., KijiProduceJobBuilder).  See
- * "Overriding KeyValueStore Definitions at Run-time" in the quick-start docs for details.
+ * programmatically by using a subclass of MapReduceJobBuilder (e.g., KijiProduceJobBuilder).
  * These KeyValueStores will be instantiated with the default constructor,
  * the XML will be parsed into configuration name-value pairs, and those will be passed to
  * <code>initFromConf()</code>.
@@ -80,7 +80,7 @@ public interface KeyValueStore<K, V> {
    * Serializes the state of the KeyValueStore into
    * the provided KeyValueStoreConfiguration.
    *
-   * @param conf The KeyValueStoreConfiguration to serialize state into.
+   * @param conf the KeyValueStoreConfiguration to serialize state into.
    *     This will be placed in a unique namespace of the job Configuration,
    *     so it can write any key.
    * @throws IOException if there is an error writing state to the configuration.
@@ -91,13 +91,13 @@ public interface KeyValueStore<K, V> {
    * Deserializes the state of this KeyValueStore from the
    * KeyValueStoreConfiguration.
    *
-   * @param conf The KeyValueStoreConfiguration storing state for this KeyValueStore.
+   * @param conf the KeyValueStoreConfiguration storing state for this KeyValueStore.
    * @throws IOException if there is an error reading from the configuration.
    */
   void initFromConf(KeyValueStoreConfiguration conf) throws IOException;
 
   /**
-   * Opens an instance of this KeyValueStore for access by clients.
+   * Opens a KeyValueStoreReader instance for access by clients to this store.
    * After calling this method, some implementations may deny subsequent calls to
    * initFromConf() by throwing InvalidStateException.
    *

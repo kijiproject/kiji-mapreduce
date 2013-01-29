@@ -93,7 +93,7 @@ public final class FileStoreHelper implements Configurable {
   public static final boolean USE_DCACHE_DEFAULT = true;
 
   /**
-   * Suffix for the KeyValueStore definition that that is set to the list of
+   * Suffix for the KeyValueStore definition that is set to the list of
    * input paths. This may be multiple comma-delimited paths.
    */
   public static final String CONF_PATHS_KEY = "paths";
@@ -224,9 +224,8 @@ public final class FileStoreHelper implements Configurable {
    */
   @ApiAudience.Private
   private final class DirExpandAggregator extends Lists.Aggregator<Path, List<Path>> {
-    // TODO(aaron): This class stands ready to be factored out to assist other places
-    // in Wibi where we need to expand a list of files, dirs and globs into just a list
-    // of files.
+    // Note: This class could be factored out to assist other places in Kiji where we need
+    // to expand a list of files, dirs and globs into just a list of files, if necessary.
 
     /** Last exception encountered during file stat lookups for the input paths. */
     private IOException mLastExn;

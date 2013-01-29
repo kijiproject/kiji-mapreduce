@@ -26,13 +26,28 @@ import java.io.IOException;
 import org.apache.avro.Schema;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
+import org.kiji.schema.Kiji;
+import org.kiji.schema.KijiClientTest;
+import org.kiji.schema.KijiURI;
+import org.kiji.schema.layout.KijiTableLayout;
+import org.kiji.schema.layout.KijiTableLayouts;
 
-public class TestKijiTableKeyValueStore {
+public class TestKijiTableKeyValueStore extends KijiClientTest {
+  private Kiji mKiji;
+
+  @Before
+  public void setupEnvironment() throws Exception {
+    getKiji().getAdmin().createTable("table",
+        new KijiTableLayout(KijiTableLayouts.getLayout(KijiTableLayouts.SIMPLE), null), false);
+  }
+
   /** @return an uninitialized store to test for initialization from a Configuration. */
+  @SuppressWarnings("unchecked")
   private <T> KijiTableKeyValueStore<T> getUninitializedStore() {
     return (KijiTableKeyValueStore<T>) ReflectionUtils.newInstance(
         KijiTableKeyValueStore.class, new Configuration());
@@ -42,7 +57,7 @@ public class TestKijiTableKeyValueStore {
   public void testSerialization() throws IOException {
     // Test that we can serialize a KijiTableKeyValueStore to a conf and resurrect it.
     KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
-        .withTable("tbl")
+        .withTable(KijiURI.parse(getKiji().getURI().toString() + "/table"))
         .withColumn("some", "column")
         .withMinTimestamp(42)
         .withMaxTimestamp(512)
@@ -66,7 +81,7 @@ public class TestKijiTableKeyValueStore {
   public void testOkWithoutSchema() throws IOException {
     // Serializing without an explicit reader schema is ok.
     KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
-        .withTable("tbl")
+        .withTable(KijiURI.parse(getKiji().getURI().toString() + "/table"))
         .withColumn("some", "column")
         .withMinTimestamp(42)
         .withMaxTimestamp(512)
@@ -87,8 +102,20 @@ public class TestKijiTableKeyValueStore {
   }
 
   @Test(expected=IllegalArgumentException.class)
-  public void testRequiresTable() {
-    // Test that we need to set the table name, or it will fail to verify as input.
+  public void testRequiresRealTable() throws IOException {
+    // The specified table must exist in the Kiji instance.
+    KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
+        .withTable(KijiURI.parse(getKiji().getURI().toString() + "/table_name_not_real"))
+        .withColumn("some", "column")
+        .withMinTimestamp(42)
+        .withMaxTimestamp(512)
+        .withCacheLimit(2121)
+        .build();
+  }
+
+  @Test(expected=IllegalArgumentException.class)
+  public void testRequiresTableUri() {
+    // Test that we need to set the table URI, or it will fail to verify as input.
     KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
         .withColumn("some", "column")
         .withMinTimestamp(42)
@@ -98,10 +125,23 @@ public class TestKijiTableKeyValueStore {
   }
 
   @Test(expected=IllegalArgumentException.class)
-  public void testRequiresColumn() {
+  public void testRequiresTableNameInUri() {
+    // Test that we need to set the table URI to have both an instance
+    // name and a table name, or it will fail to verify as input.
+    KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
+        .withTable(getKiji().getURI())
+        .withColumn("some", "column")
+        .withMinTimestamp(42)
+        .withMaxTimestamp(512)
+        .withCacheLimit(2121)
+        .build();
+  }
+
+  @Test(expected=IllegalArgumentException.class)
+  public void testRequiresColumn() throws IOException {
     // Test that we need to set the column to read.
     KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
-        .withTable("foo")
+        .withTable(KijiURI.parse(getKiji().getURI().toString() + "/table"))
         .withMinTimestamp(42)
         .withMaxTimestamp(512)
         .withCacheLimit(2121)

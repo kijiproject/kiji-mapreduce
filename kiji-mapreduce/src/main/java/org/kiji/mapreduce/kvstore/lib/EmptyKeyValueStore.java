@@ -141,6 +141,7 @@ public final class EmptyKeyValueStore<K, V> implements KeyValueStore<K, V> {
 
   /**
    * KeyValueReader instance that returns no values from an "empty" key value store.
+   *
    * @param K the key type to accept.
    * @param V the value type to return (in practice, all values will be null).
    */

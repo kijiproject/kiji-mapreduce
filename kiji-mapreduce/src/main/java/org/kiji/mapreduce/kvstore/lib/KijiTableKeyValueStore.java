@@ -23,12 +23,12 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.avro.Schema;
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HConstants;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KijiMapReduceJob;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreConfiguration;
 import org.kiji.mapreduce.kvstore.KeyValueStoreReader;
@@ -36,11 +36,13 @@ import org.kiji.mapreduce.util.LruCache;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.Kiji;
 import org.kiji.schema.KijiColumnName;
-import org.kiji.schema.KijiConfiguration;
 import org.kiji.schema.KijiDataRequest;
 import org.kiji.schema.KijiRowData;
 import org.kiji.schema.KijiTable;
 import org.kiji.schema.KijiTableReader;
+import org.kiji.schema.KijiURI;
+import org.kiji.schema.KijiURIException;
+import org.kiji.schema.util.ReferenceCountableUtils;
 
 /**
  * KeyValueStore lookup implementation based on a Kiji table.
@@ -58,7 +60,7 @@ import org.kiji.schema.KijiTableReader;
  * <p>When configuring a KijiTableKeyValueStore from a kvstores XML file, the following
  * properties may be used to specify the behavior of this class:</p>
  * <ul>
- *   <li><tt>table</tt> - The name of the table backing this store.</li>
+ *   <li><tt>table.uri</tt> - The Kiji URI for the table backing this store.</li>
  *   <li><tt>column</tt> - The family and qualifier of the column representing the values
  *       in this store. e.g., <tt>info:name</tt></li>
  *   <li><tt>min.ts</tt> - A <tt>long</tt> value representing the minimum timestamp to
@@ -84,14 +86,14 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
 
   // See javadoc for this class to understand the definitions of these configuration keys.
 
-  private static final String CONF_TABLE = "table";
+  private static final String CONF_TABLE_URI = "table.uri";
   private static final String CONF_COLUMN = "column";
   private static final String CONF_MIN_TS = "min.ts";
   private static final String CONF_MAX_TS = "max.ts";
   private static final String CONF_CACHE_SIZE = "cache.size";
   private static final String CONF_READER_SCHEMA = "avro.reader.schema";
 
-  private String mTableName;
+  private KijiURI mTableUri;
   private KijiColumnName mColumn;
   private long mMinTs;
   private long mMaxTs;
@@ -109,7 +111,7 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
    */
   @ApiAudience.Public
   public static final class Builder {
-    private String mTableName;
+    private KijiURI mTableUri;
     private KijiColumnName mColumn;
     private long mMinTs;
     private long mMaxTs;
@@ -142,14 +144,12 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
     /**
      * Sets the table to use as the backing store.
      *
-     * @param tableName the table to use.
+     * @param tableUri the Kiji table URI to use.
      * @return this builder instance.
      */
-    public Builder withTable(String tableName) {
-      if (null == tableName || tableName.isEmpty()) {
-        throw new IllegalArgumentException("Must specify a non-empty table name");
-      }
-      mTableName = tableName;
+    public Builder withTable(KijiURI tableUri) {
+      checkTableUri(tableUri);
+      mTableUri = tableUri;
       return this;
     }
 
@@ -226,20 +226,51 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
     }
 
     /**
+     * Throws an IllegalArgumentException if tableUri is invalid. The URI
+     * is valid iff it is not null, specifies a Kiji instance, and specifies
+     * a Kiji table within that instance to read.
+     *
+     * @param tableUri a Kiji URI that must specify an instance and table.
+     * @throws IllegalArgumentException if the uri is invalid.
+     */
+    private void checkTableUri(KijiURI tableUri) {
+      if (null == tableUri) {
+        throw new IllegalArgumentException("Must specify non-null table URI");
+      }
+
+      String tableName = tableUri.getTable();
+      if (null == tableName || tableName.isEmpty()) {
+        throw new IllegalArgumentException("Must specify a non-empty table name");
+      }
+    }
+
+    /**
      * Build a new KijiTableKeyValueStore instance.
      *
      * @param <V> The value type for the KeyValueStore.
      * @return the initialized KeyValueStore.
      */
     public <V> KijiTableKeyValueStore<V> build() {
-      if (null == mTableName || mTableName.isEmpty()) {
-        throw new IllegalArgumentException("Must specify a non-empty table name");
-      }
+      checkTableUri(mTableUri);
       if (null == mColumn || !mColumn.isFullyQualified()) {
         throw new IllegalArgumentException("Must specify a fully-qualified column");
       }
       if (mMinTs > mMaxTs) {
         throw new IllegalArgumentException("Minimum timestamp must be less than max timestamp");
+      }
+
+      // Check that the table exists, so users can fail fast before finding this
+      // IO error after the MapReduce job has started.
+      Kiji kiji = null;
+      KijiTable kijiTable = null;
+      try {
+        kiji = Kiji.Factory.open(mTableUri, mConf);
+        kijiTable = kiji.openTable(mTableUri.getTable());
+      } catch (IOException ioe) {
+        throw new IllegalArgumentException("Could not open table: " + mTableUri, ioe);
+      } finally {
+        IOUtils.closeQuietly(kijiTable);
+        ReferenceCountableUtils.releaseQuietly(kiji);
       }
 
       return new KijiTableKeyValueStore<V>(this);
@@ -271,7 +302,7 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
    * @param builder the builder instance to read configuration from.
    */
   private KijiTableKeyValueStore(Builder builder) {
-    mTableName = builder.mTableName;
+    mTableUri = builder.mTableUri;
     mColumn = builder.mColumn;
     mMinTs = builder.mMinTs;
     mMaxTs = builder.mMaxTs;
@@ -304,8 +335,8 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
   /** {@inheritDoc} */
   @Override
   public void storeToConf(KeyValueStoreConfiguration conf) throws IOException {
-    if (null == mTableName) {
-      throw new IOException("Required attribute not set: tableName");
+    if (null == mTableUri) {
+      throw new IOException("Required attribute not set: table URI");
     }
     if (null == mColumn) {
       throw new IOException("Required attribute not set: column");
@@ -314,7 +345,7 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
       throw new IOException("Column must be fully qualified");
     }
 
-    conf.set(CONF_TABLE, mTableName);
+    conf.set(CONF_TABLE_URI, mTableUri.toString());
     conf.set(CONF_COLUMN, mColumn.toString());
     conf.setLong(CONF_MIN_TS, mMinTs);
     conf.setLong(CONF_MAX_TS, mMaxTs);
@@ -334,7 +365,12 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
           "Cannot set the configuration after a reader has been opened");
     }
 
-    mTableName = conf.get(CONF_TABLE);
+    try {
+      mTableUri = KijiURI.parse(conf.get(CONF_TABLE_URI));
+    } catch (KijiURIException kue) {
+      throw new IOException("Error parsing input URI: " + kue.getMessage(), kue);
+    }
+
     mColumn = new KijiColumnName(conf.get(CONF_COLUMN));
     mMinTs = conf.getLong(CONF_MIN_TS, 0);
     mMaxTs = conf.getLong(CONF_MAX_TS, Long.MAX_VALUE);
@@ -372,11 +408,11 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
     @SuppressWarnings("unchecked")
     KijiTableKeyValueStore<V> other = (KijiTableKeyValueStore<V>) otherObj;
 
-    if (mTableName == null) {
-      if (other.mTableName != null) {
+    if (mTableUri == null) {
+      if (other.mTableUri != null) {
         return false;
       }
-    } else if (!mTableName.equals(other.mTableName)) {
+    } else if (!mTableUri.equals(other.mTableUri)) {
       return false;
     }
 
@@ -413,7 +449,7 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
   @Override
   public int hashCode() {
     int hash = 17;
-    hash = hash + (null == mTableName ? 0 : mTableName.hashCode()) * 31;
+    hash = hash + (null == mTableUri ? 0 : mTableUri.hashCode()) * 31;
     hash = hash + (null == mColumn ? 0 : mColumn.hashCode()) * 31;
     return hash;
   }
@@ -439,9 +475,8 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
      */
     private TableKVReader() throws IOException {
       Configuration conf = getConf();
-      String instanceName = KijiMapReduceJob.getInstanceName(conf);
-      mKiji = Kiji.Factory.open(new KijiConfiguration(conf, instanceName));
-      mKijiTable = mKiji.openTable(mTableName);
+      mKiji = Kiji.Factory.open(mTableUri, conf);
+      mKijiTable = mKiji.openTable(mTableUri.getTable());
       mTableReader = mKijiTable.openTableReader();
 
       mDataReq = new KijiDataRequest()
@@ -524,15 +559,9 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
     @Override
     public void close() throws IOException {
       try {
-        if (null != mTableReader) {
-          mTableReader.close();
-        }
-        if (null != mKijiTable) {
-          mKijiTable.close();
-        }
-        if (null != mKiji) {
-          mKiji.release();
-        }
+        IOUtils.closeQuietly(mTableReader);
+        IOUtils.closeQuietly(mKijiTable);
+        ReferenceCountableUtils.releaseQuietly(mKiji);
       } finally {
         mTableReader = null;
         mKijiTable = null;

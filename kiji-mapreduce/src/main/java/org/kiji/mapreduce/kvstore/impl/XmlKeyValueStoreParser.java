@@ -158,8 +158,8 @@ public final class XmlKeyValueStoreParser {
 
             // Create the store instance, and then configure it by
             // parsing the <store> element.
-            KeyValueStore<?, ?> store = ReflectionUtils.newInstance(
-                storeClass, new Configuration());
+            KeyValueStore<?, ?> store = ReflectionUtils.newInstance(storeClass,
+                new Configuration());
             configureFromXml(store, storeName, node);
             outMap.put(storeName, store);
           } catch (ClassNotFoundException cnfe) {

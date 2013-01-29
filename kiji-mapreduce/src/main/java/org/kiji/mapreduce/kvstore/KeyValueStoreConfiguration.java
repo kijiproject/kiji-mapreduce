@@ -46,21 +46,22 @@ public final class KeyValueStoreConfiguration {
   public static final String KEY_VALUE_STORE_NAMESPACE = "kiji.job.kvstores.";
 
   /**
-   * Factory method to copy a Configuration into a KeyValueStoreConfiguration.
-   * The resulting KeyValueStoreConfiguration will have all key-value pairs
-   * that the parent does.
+   * Factory method to wrap a Configuration in a KeyValueStoreConfiguration.
    *
-   * <p>Note that this does <i>not</i> wrap the Configuration <code>target</code>,
-   * but instead copies values of it into a <i>new</i> Configuration.
+   * <p>The resulting KeyValueStoreConfiguration will have all key-value pairs that the
+   * parent does. The resulting KeyValueStoreConfiguration will write to the "0"'th
+   * KeyValueStore entry in the "kiji.job.kvstores" namespace (e.g., calling
+   * <code>set("foo", ...)</code> on the resulting namespace will set key
+   * <tt>kiji.job.kvstores.0.foo</tt> within the backing Configuration.</p>
    *
-   * @param target The Configuration to copy into a KeyValueStoreConfiguration.
-   * @return A new KeyValueStoreConfiguration, with each of the key-value pairs
-   *     from <code>target</code>, but backed by a brand new Configuration.
+   * @param conf the Configuration to wrap in a KeyValueStoreConfiguration.
+   * @return A new KeyValueStoreConfiguration that is configured to write to
+   *     a namespace within the supplied Configuration.
    */
-  public static KeyValueStoreConfiguration fromConf(Configuration target) {
+  public static KeyValueStoreConfiguration fromConf(Configuration conf) {
     KeyValueStoreConfiguration theConf = new KeyValueStoreConfiguration(
         new Configuration(false), 0);
-    for (Entry<String, String> e : target) {
+    for (Entry<String, String> e : conf) {
       theConf.set(e.getKey(), e.getValue());
     }
     return theConf;
@@ -322,10 +323,12 @@ public final class KeyValueStoreConfiguration {
   }
 
   /**
-   * Returns the prefix for all keys stored in this KeyValueStoreConfiguration.
+   * Returns the specified name, prepended with the namespace prefix for all keys
+   * stored in this KeyValueStoreConfiguration.
    *
    * @param name The String to prefix with the namespace.
-   * @return The prefix for all keys stored in this KeyValueStoreConfiguration.
+   * @return The true key to write into the underlying Configuration; the namespace
+   *     concatenated with a "." character and the specified name.
    */
   private String prefix(String name) {
     return getNamespace() + "." + name;

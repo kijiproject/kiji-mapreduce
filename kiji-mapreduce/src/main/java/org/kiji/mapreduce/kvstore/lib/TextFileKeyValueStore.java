@@ -23,9 +23,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -283,7 +283,7 @@ public final class TextFileKeyValueStore implements KeyValueStore<String, String
       }
 
       mDelim = delim;
-      mMap = new TreeMap<String, String>();
+      mMap = new HashMap<String, String>();
 
       for (Path path : paths) {
         // Load the entire file into the lookup map.

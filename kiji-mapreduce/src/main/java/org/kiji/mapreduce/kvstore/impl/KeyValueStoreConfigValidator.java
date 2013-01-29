@@ -55,7 +55,7 @@ public final class KeyValueStoreConfigValidator {
    * <p>Each store in <code>requiredStores</code> must have either:</p>
    * <ul>
    *   <li>A default implementation, or</li>
-   *   <li>An implementation defined an <code>storeBindings</code>.</li>
+   *   <li>An implementation defined in <code>storeBindings</code>.</li>
    * </ul>
    *
    * <p>If not, an exception is thrown.</p>

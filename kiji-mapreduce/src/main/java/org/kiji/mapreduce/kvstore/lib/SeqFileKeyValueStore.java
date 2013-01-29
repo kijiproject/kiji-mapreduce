@@ -20,9 +20,9 @@
 package org.kiji.mapreduce.kvstore.lib;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -210,7 +210,7 @@ public final class SeqFileKeyValueStore<K, V> implements KeyValueStore<K, V> {
      */
     @SuppressWarnings("unchecked")
     public Reader(Configuration conf, List<Path> paths) throws IOException {
-      mMap = new TreeMap<K, V>();
+      mMap = new HashMap<K, V>();
 
       for (Path path : paths) {
         // Load the entire SequenceFile into the lookup map.

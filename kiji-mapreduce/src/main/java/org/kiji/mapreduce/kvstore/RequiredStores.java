@@ -51,6 +51,7 @@ public final class RequiredStores {
 
   /**
    * Returns an immutable, empty mapping from names to store implementations.
+   *
    * @return an immutable, empty mapping from names to store implementations.
    */
   public static Map<String, KeyValueStore<?, ?>> none() {
