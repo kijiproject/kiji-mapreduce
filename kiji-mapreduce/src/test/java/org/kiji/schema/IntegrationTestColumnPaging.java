@@ -123,13 +123,12 @@ public class IntegrationTestColumnPaging extends AbstractKijiIntegrationTest {
       implements AvroValueWriter {
     @Override
     public KijiDataRequest getDataRequest() {
-      return new KijiDataRequest()
-          .addColumn(new KijiDataRequest.Column("info", "name"))
-          .addColumn(new KijiDataRequest.Column("info", "location")
-              .withMaxVersions(5)
-              .withPageSize(2))
-          .addColumn(new KijiDataRequest.Column("jobs")
-              .withPageSize(2));
+      KijiDataRequestBuilder builder = KijiDataRequest.builder();
+      builder.column().withMaxVersions(5).withPageSize(2)
+          .add("info", "name")
+          .add("info", "location");
+      builder.column().withPageSize(2).add("jobs");
+      return builder.build();
     }
 
     @Override
