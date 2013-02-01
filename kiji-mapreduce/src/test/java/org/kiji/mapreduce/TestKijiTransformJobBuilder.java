@@ -47,7 +47,7 @@ import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
 import org.kiji.mapreduce.kvstore.lib.EmptyKeyValueStore;
 import org.kiji.mapreduce.kvstore.lib.SeqFileKeyValueStore;
 import org.kiji.mapreduce.output.TextMapReduceJobOutput;
-import org.kiji.schema.KijiConfiguration;
+import org.kiji.schema.KijiURI;
 import org.kiji.schema.util.Resources;
 
 public class TestKijiTransformJobBuilder {
@@ -108,11 +108,11 @@ public class TestKijiTransformJobBuilder {
     }
   }
 
-  /** WIBI-1170. Must supply a kiji configuration object. */
   @Test(expected=JobConfigurationException.class)
-  public void testSupplyKijiConfig() throws Exception {
+  public void testMissingConfig() throws Exception {
     KijiTransformJobBuilder.create()
-        // .withKijiConfiguration(new KijiConfiguration(new Configuration, "foo"))
+        // unspecified KijiURI should throw JobConfigurationException
+        // .withKijiURI()
         .withInput(new TextMapReduceJobInput(new Path("/path/to/my/input")))
         .withMapper(MyMapper.class)
         .withReducer(MyReducer.class)
@@ -124,7 +124,8 @@ public class TestKijiTransformJobBuilder {
   public void testBuild() throws Exception {
     LOG.info("Configuring job...");
     KijiTransformJobBuilder builder = KijiTransformJobBuilder.create()
-        .withKijiConfiguration(new KijiConfiguration(new Configuration(), "foo"))
+        .withKijiURI(KijiURI.newBuilder().withInstanceName("foo").build())
+        .withConfiguration(new Configuration())
         .withInput(new TextMapReduceJobInput(new Path("/path/to/my/input")))
         .withMapper(MyMapper.class)
         .withReducer(MyReducer.class)
@@ -164,7 +165,8 @@ public class TestKijiTransformJobBuilder {
     LOG.info("Configuring job...");
     InputStream xmlStores = Resources.openSystemResource("org/kiji/mapreduce/test-kvstores.xml");
     KijiTransformJobBuilder builder = KijiTransformJobBuilder.create()
-        .withKijiConfiguration(new KijiConfiguration(new Configuration(), "foo"))
+        .withKijiURI(KijiURI.newBuilder().withInstanceName("foo").build())
+        .withConfiguration(new Configuration())
         .withInput(new TextMapReduceJobInput(new Path("/path/to/my/input")))
         .withMapper(MyMapper.class)
         .withReducer(MyReducer.class)
@@ -213,12 +215,13 @@ public class TestKijiTransformJobBuilder {
   @Test(expected=JobConfigurationException.class)
   public void testMissingConfiguration() throws IOException {
     KijiTransformJobBuilder builder = KijiTransformJobBuilder.create()
+        .withConfiguration(new Configuration())
         .withInput(new TextMapReduceJobInput(new Path("/path/to/my/input")))
         .withMapper(MyMapper.class)
         .withReducer(MyReducer.class)
         .withOutput(new TextMapReduceJobOutput(new Path("/path/to/my/output"), 16));
 
-    // We didn't call withConfiguration(), so this should throw an exception when we build.
+    // We didn't call withKijiURI(), so this should throw an exception when we build.
     builder.build();
   }
 }

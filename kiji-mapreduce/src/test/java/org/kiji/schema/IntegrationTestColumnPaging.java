@@ -64,7 +64,7 @@ public class IntegrationTestColumnPaging extends AbstractKijiIntegrationTest {
 
   @Before
   public void setup() throws Exception {
-    mKiji = Kiji.Factory.open(getKijiConfiguration());
+    mKiji = Kiji.Factory.open(getKijiURI(), getIntegrationHelper().getConf());
     KijiAdmin admin = mKiji.getAdmin();
     admin.createTable("user",
         new KijiTableLayout(KijiTableLayouts.getLayout(KijiTableLayouts.PAGING_TEST), null),
@@ -226,7 +226,7 @@ public class IntegrationTestColumnPaging extends AbstractKijiIntegrationTest {
 
     // Open the avro file.
     DataFileReader<GenericRecord> fileReader = new DataFileReader<GenericRecord>(
-        new FsInput(new Path(outputPath, "part-m-00000.avro"), getKijiConfiguration().getConf()),
+        new FsInput(new Path(outputPath, "part-m-00000.avro"), getIntegrationHelper().getConf()),
         new GenericDatumReader<GenericRecord>(recordSchema));
 
     try {

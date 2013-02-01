@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import com.google.common.base.Preconditions;
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.NullWritable;
 import org.junit.After;
@@ -40,13 +41,13 @@ import org.kiji.mapreduce.input.KijiTableMapReduceJobInput.RowOptions;
 import org.kiji.mapreduce.output.DirectKijiTableMapReduceJobOutput;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.Kiji;
-import org.kiji.schema.KijiConfiguration;
 import org.kiji.schema.KijiDataRequest;
 import org.kiji.schema.KijiDataRequest.Column;
 import org.kiji.schema.KijiRowData;
 import org.kiji.schema.KijiRowScanner;
 import org.kiji.schema.KijiTable;
 import org.kiji.schema.KijiTableReader;
+import org.kiji.schema.KijiURI;
 import org.kiji.schema.impl.HBaseKijiTable;
 import org.kiji.schema.layout.KijiTableLayout;
 import org.kiji.schema.util.InstanceBuilder;
@@ -145,9 +146,11 @@ public class TestTransform {
   @Test
   public void testMapReduce() throws Exception {
     // Run the transform (map-only job):
-    final KijiConfiguration kijiConf = new KijiConfiguration(mKiji.getConf(), mKiji.getURI());
+    final KijiURI kijiURI = mKiji.getURI();
+    final Configuration conf = mKiji.getConf();
     final MapReduceJob job = KijiTransformJobBuilder.create()
-        .withKijiConfiguration(kijiConf)
+        .withKijiURI(kijiURI)
+        .withConfiguration(conf)
         .withMapper(ExampleMapper.class)
         .withInput(new KijiTableMapReduceJobInput(
             (HBaseKijiTable) mTable,

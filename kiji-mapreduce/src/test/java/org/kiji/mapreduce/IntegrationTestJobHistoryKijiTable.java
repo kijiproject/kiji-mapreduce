@@ -38,10 +38,10 @@ import org.slf4j.LoggerFactory;
 import org.kiji.mapreduce.output.DirectKijiTableMapReduceJobOutput;
 import org.kiji.schema.Kiji;
 import org.kiji.schema.KijiAdmin;
-import org.kiji.schema.KijiConfiguration;
 import org.kiji.schema.KijiDataRequest;
 import org.kiji.schema.KijiRowData;
 import org.kiji.schema.KijiTable;
+import org.kiji.schema.KijiURI;
 import org.kiji.schema.testutil.AbstractKijiIntegrationTest;
 import org.kiji.schema.util.ResourceUtils;
 
@@ -59,7 +59,7 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
   public void setup() throws Exception {
     Kiji kiji = null;
     try {
-      kiji = Kiji.Factory.open(getKijiConfiguration());
+      kiji = Kiji.Factory.open(getKijiURI(), getIntegrationHelper().getConf());
       KijiAdmin kijiAdmin = kiji.getAdmin();
       JobHistoryKijiTable.install(kijiAdmin);
     } finally {
@@ -72,7 +72,7 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
    */
   @Test
   public void testInstallAndOpen() throws Exception {
-    Kiji kiji = Kiji.Factory.open(getKijiConfiguration());
+    Kiji kiji = Kiji.Factory.open(getKijiURI(), getIntegrationHelper().getConf());
     // This will throw an IOException if there's difficulty opening the table
     JobHistoryKijiTable jobHistory = JobHistoryKijiTable.open(kiji);
     jobHistory.close();
@@ -120,12 +120,13 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
   @Test
   public void testMappers() throws Exception {
     createAndPopulateFooTable();
-    KijiConfiguration kijiConf = getKijiConfiguration();
+    KijiURI kijiURI = getKijiURI();
+    Configuration conf = getIntegrationHelper().getConf();
     // Set a value in the configuration. We'll check to be sure we can retrieve it later.
-    kijiConf.getConf().set("CONF_TEST_ANIMAL_STRING", "squirrel");
-    LOG.info("Kiji configuration has " + new Integer(kijiConf.getConf().size()).toString()
+    conf.set("CONF_TEST_ANIMAL_STRING", "squirrel");
+    LOG.info("Kiji configuration has " + new Integer(conf.size()).toString()
         + " keys.");
-    Kiji kiji = Kiji.Factory.open(kijiConf);
+    Kiji kiji = Kiji.Factory.open(kijiURI, conf);
     KijiTable fooTable = kiji.openTable("foo");
     JobHistoryKijiTable jobHistory = JobHistoryKijiTable.open(kiji);
 
@@ -191,7 +192,7 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
   @Test
   public void testSubmit() throws Exception {
     createAndPopulateFooTable();
-    Kiji kiji = Kiji.Factory.open(getKijiConfiguration());
+    Kiji kiji = Kiji.Factory.open(getKijiURI(), getIntegrationHelper().getConf());
     KijiTable fooTable = kiji.openTable("foo");
     JobHistoryKijiTable jobHistory = JobHistoryKijiTable.open(kiji);
 
@@ -232,7 +233,7 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
    @Test
    public void testMissingHistoryTableNonfatal() throws Exception {
      createAndPopulateFooTable();
-     Kiji kiji = Kiji.Factory.open(getKijiConfiguration());
+     Kiji kiji = Kiji.Factory.open(getKijiURI(), getIntegrationHelper().getConf());
      KijiTable fooTable = kiji.openTable("foo");
      KijiAdmin kijiAdmin = kiji.getAdmin();
      kijiAdmin.deleteTable(JobHistoryKijiTable.getInstallName());
