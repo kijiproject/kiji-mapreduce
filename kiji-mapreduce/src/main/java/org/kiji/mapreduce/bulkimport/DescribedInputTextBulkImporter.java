@@ -30,6 +30,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +39,9 @@ import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
 import org.kiji.hadoop.configurator.HadoopConf;
 import org.kiji.hadoop.configurator.HadoopConfigurator;
+import org.kiji.mapreduce.KijiBulkImporter;
 import org.kiji.mapreduce.KijiConfKeys;
+import org.kiji.mapreduce.KijiTableContext;
 import org.kiji.mapreduce.bulkimport.TextInputDescriptorParser.QualifierInfo;
 import org.kiji.schema.Kiji;
 import org.kiji.schema.KijiColumnName;
@@ -183,6 +187,7 @@ public abstract class DescribedInputTextBulkImporter extends KijiBulkImporter<Lo
   public void produce(LongWritable fileOffset, Text line, KijiTableContext context)
       throws IOException {
     produce(line, context);
+  }
 
   /**
    * Returns the family to write to, specified on the Configuration variable
