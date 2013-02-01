@@ -88,7 +88,7 @@ public class TestKijiTableMapReduceJobInput extends KijiClientTest {
 
     // Request the latest 3 versions of column 'info:email':
     KijiDataRequestBuilder builder = KijiDataRequest.builder();
-    builder.column().withMaxVersions(3).add("info", "email");
+    builder.columns().withMaxVersions(3).add("info", "email");
     KijiDataRequest dataRequest = builder.build();
 
     // Read from 'here' to 'there':

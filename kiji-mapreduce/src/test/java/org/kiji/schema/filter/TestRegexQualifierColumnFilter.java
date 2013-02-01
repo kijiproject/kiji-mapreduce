@@ -98,9 +98,9 @@ public class TestRegexQualifierColumnFilter {
     @Override
     public KijiDataRequest getDataRequest() {
       KijiDataRequestBuilder builder = KijiDataRequest.builder();
-      builder.column().withMaxVersions(10)
+      builder.columns().withMaxVersions(10)
           .withFilter(new RegexQualifierColumnFilter("a.*"))
-          .add("family");
+          .addFamily("family");
       return builder.build();
     }
 

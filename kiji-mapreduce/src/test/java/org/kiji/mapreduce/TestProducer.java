@@ -129,7 +129,7 @@ public class TestProducer {
 
     // Validate produced output:
     final KijiDataRequestBuilder builder = KijiDataRequest.builder();
-    builder.column().add("info").add("map_family");
+    builder.columns().addFamily("info").addFamily("map_family");
     final KijiRowScanner scanner = mReader.getScanner(builder.build());
     for (KijiRowData row : scanner) {
       final EntityId eid = row.getEntityId();

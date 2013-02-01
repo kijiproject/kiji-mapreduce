@@ -191,7 +191,7 @@ public class IntegrationTestTableMapper extends AbstractKijiIntegrationTest {
 
   private void validateOutputTable() throws Exception {
     final KijiDataRequestBuilder okdrb = KijiDataRequest.builder();
-    okdrb.column().withMaxVersions(3).add("primitives");
+    okdrb.columns().withMaxVersions(3).addFamily("primitives");
     final KijiDataRequest okdr = okdrb.build();
     final Map<String, KijiRowData> rows = toRowMap(mOutputTable, okdr);
     assertEquals(2, rows.size());

@@ -124,10 +124,10 @@ public class IntegrationTestColumnPaging extends AbstractKijiIntegrationTest {
     @Override
     public KijiDataRequest getDataRequest() {
       KijiDataRequestBuilder builder = KijiDataRequest.builder();
-      builder.column().withMaxVersions(5).withPageSize(2)
+      builder.columns().withMaxVersions(5).withPageSize(2)
           .add("info", "name")
           .add("info", "location");
-      builder.column().withPageSize(2).add("jobs");
+      builder.columns().withPageSize(2).addFamily("jobs");
       return builder.build();
     }
 
