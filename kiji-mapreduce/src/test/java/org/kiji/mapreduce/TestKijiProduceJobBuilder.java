@@ -94,7 +94,7 @@ public class TestKijiProduceJobBuilder extends KijiClientTest {
 
     getConf().set("fs.defaultFS", mTempPath.toString());
     getConf().set("fs.default.name", mTempPath.toString());
-    final KijiTableLayout layout = new KijiTableLayout(KijiMRTestLayouts.getTestLayout(), null);
+    final KijiTableLayout layout = KijiTableLayout.newLayout(KijiMRTestLayouts.getTestLayout());
     getKiji().createTable("test", layout);
 
     // Set the working directory so that it gets cleaned up after the test:
@@ -170,7 +170,7 @@ public class TestKijiProduceJobBuilder extends KijiClientTest {
   public void testBuildWithDifferentTableOutput() throws ClassNotFoundException, IOException {
     {
       final KijiTableLayout layout =
-          new KijiTableLayout(KijiMRTestLayouts.getTestLayout("other"), null);
+          KijiTableLayout.newLayout(KijiMRTestLayouts.getTestLayout("other"));
       getKiji().createTable(layout.getName(), layout);
     }
     final KijiTable otherTable = getKiji().openTable("other");
