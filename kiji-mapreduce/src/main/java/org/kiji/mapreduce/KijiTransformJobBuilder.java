@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreClient;
-import org.kiji.schema.KijiConfiguration;
+import org.kiji.schema.KijiURI;
 
 /** Builds a job that runs a MapReduce in Hadoop. */
 @ApiAudience.Public
@@ -57,7 +57,9 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
   private KijiReducer<?, ?, ?, ?> mReducer;
 
   /** The kiji configuration. */
-  private KijiConfiguration mKijiConf;
+  private KijiURI mKijiURI;
+  /** The Hadoop configuration. */
+  private Configuration mConf;
   /** The job input. */
   private MapReduceJobInput mJobInput;
 
@@ -71,7 +73,8 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
     mCombiner = null;
     mReducer = null;
 
-    mKijiConf = null;
+    mKijiURI = null;
+    mConf = null;
     mJobInput = null;
   }
 
@@ -85,17 +88,28 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
   }
 
   /**
+   * Sets the KijiURI for the instance used.
+   *
+   * @param kijiURI a KijiURI.
+   * @return This builder instance so you may chain configuration method calls.
+   */
+  public KijiTransformJobBuilder withKijiURI(KijiURI kijiURI) {
+    mKijiURI = kijiURI;
+    return this;
+  }
+
+  /**
    * Sets the base job configuration object to use.
    *
    *  <p>The Configuration instance returned by <code>kijiConf.getConf()</code> will not be
    *  modified; it will be used as the template for the Configuration object created and held
    *  in the underlying Hadoop MapReduce job.</p>
    *
-   * @param kijiConf A kiji configuration object
-   * @return This builder instance so yuo may chain configuration method calls.
+   * @param conf A Hadoop configuration object
+   * @return This builder instance so you may chain configuration method calls.
    */
-  public KijiTransformJobBuilder withKijiConfiguration(KijiConfiguration kijiConf) {
-    mKijiConf = kijiConf;
+  public KijiTransformJobBuilder withConfiguration(Configuration conf) {
+    mConf = conf;
     return this;
   }
 
@@ -149,6 +163,10 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
   /** {@inheritDoc} */
   @Override
   protected void configureJob(Job job) throws IOException {
+    // Check that the kijiURI was configured
+    if (null == mKijiURI) {
+      throw new JobConfigurationException("Must specify KijiURI.");
+    }
     // Check that job input was configured.
     if (null == mJobInput) {
       throw new JobConfigurationException("Must specify job input.");
@@ -224,10 +242,10 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
   @Override
   public Configuration getConf() {
     // Check that the Hadoop configuration was set.
-    if (null == mKijiConf) {
+    if (null == mConf) {
       throw new JobConfigurationException("Must specify a configuration");
     }
-    return mKijiConf.getConf();
+    return mConf;
   }
 
   /** {@inheritDoc} */

@@ -26,7 +26,6 @@ import org.kiji.common.flags.Flag;
 import org.kiji.mapreduce.KijiMapper;
 import org.kiji.mapreduce.KijiReducer;
 import org.kiji.mapreduce.KijiTransformJobBuilder;
-import org.kiji.schema.KijiConfiguration;
 import org.kiji.schema.tools.KijiToolLauncher;
 import org.kiji.schema.tools.RequiredFlagException;
 
@@ -77,7 +76,9 @@ public final class KijiTransform extends JobTool<KijiTransformJobBuilder> {
   protected void configure(KijiTransformJobBuilder jobBuilder)
       throws ClassNotFoundException, IOException, JobIOSpecParseException {
     super.configure(jobBuilder);
-    jobBuilder.withKijiConfiguration(new KijiConfiguration(getConf(), getURI().getInstance()));
+    jobBuilder
+        .withKijiURI(getURI())
+        .withConfiguration(getConf());
 
     // Input.
     MapReduceJobInputFactory inputFactory = MapReduceJobInputFactory.create();

@@ -28,8 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.schema.KConstants;
 import org.kiji.schema.Kiji;
-import org.kiji.schema.KijiConfiguration;
+import org.kiji.schema.KijiURI;
 import org.kiji.schema.util.ResourceUtils;
 
 /** An implementation of a runnable MapReduce job that interacts with Kiji tables. */
@@ -72,7 +73,7 @@ public final class KijiMapReduceJob extends InternalMapReduceJob {
    */
   public static void setInstanceName(Configuration conf, String instanceName) {
     // TODO(WIBI-1666): Validate acceptable kiji name here.
-    conf.set(KijiConfiguration.CONF_KIJI_INSTANCE_NAME, instanceName);
+    conf.set(KijiConfKeys.KIJI_INSTANCE_NAME, instanceName);
   }
 
   /**
@@ -82,8 +83,8 @@ public final class KijiMapReduceJob extends InternalMapReduceJob {
    * @return The name of the kiji instance.
    */
   public static String getInstanceName(Configuration conf) {
-    return conf.get(KijiConfiguration.CONF_KIJI_INSTANCE_NAME,
-        KijiConfiguration.DEFAULT_INSTANCE_NAME);
+    return conf.get(KijiConfKeys.KIJI_INSTANCE_NAME,
+        KConstants.DEFAULT_INSTANCE_NAME);
   }
 
   /**
@@ -96,8 +97,9 @@ public final class KijiMapReduceJob extends InternalMapReduceJob {
     Kiji kiji = null;
     JobHistoryKijiTable jobHistory = null;
     try {
-      kiji = Kiji.Factory.open(new KijiConfiguration(job.getConfiguration(),
-          getInstanceName(job.getConfiguration())));
+      kiji = Kiji.Factory.open(
+          KijiURI.newBuilder().withInstanceName(getInstanceName(job.getConfiguration())).build(),
+          job.getConfiguration());
       jobHistory = JobHistoryKijiTable.open(kiji);
       jobHistory.recordJob(job, mJobStartTime, mJobEndTime);
     } catch (IOException e) {
