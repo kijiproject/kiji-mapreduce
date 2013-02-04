@@ -31,12 +31,17 @@ import org.kiji.annotations.Inheritance;
  * at runtime with either MapReduceJobBuilder.withStore()
  * or MapReduceJobBuilder.withStoreBindingsFile().</p>
  *
- * <p>How the KeyValueStores are surfaced to a KeyValueStoreClient is undefined.
- * Look to the implementing class for details on how these are surfaced; e.g., in the Context
- * objects supplied as arguments to Producers and Gatherers. If you are
- * implementing your own handler for data using MapReduce or other means "from scratch",
- * you may want to use a {@link KeyValueStoreReaderFactory} to deserialize a set of
- * KeyValueStores from a Configuration object.</p>
+ * <p>How the KeyValueStores are surfaced to a KeyValueStoreClient is undefined.  You
+ * <b>should not</b> open KeyValueStoreReaders directly by repeatedly calling {@link
+ * #getRequiredStores()}. This will create a new store and reader each time, and the
+ * reader may not be properly initialized to read, e.g., from the distributed cache.</p>
+ *
+ * <p> Look to the implementing class for details on how the stores to actually use (vs.
+ * the store configurations you require) are surfaced; e.g., in the Context objects
+ * supplied as arguments to Producers and Gatherers. If you are implementing your own
+ * handler for data using MapReduce or other means "from scratch", you may want to use a
+ * {@link KeyValueStoreReaderFactory} to deserialize a set of KeyValueStores from a
+ * Configuration object.</p>
  */
 @ApiAudience.Public
 @Inheritance.Extensible
@@ -48,6 +53,13 @@ public interface KeyValueStoreClient {
    * It is an error for any of these default implementations to be null.
    * If you want to defer KeyValueStore definition to runtime, bind a name
    * to the {@link org.kiji.mapreduce.kvstore.lib.UnconfiguredKeyValueStore} instead.<p>
+   *
+   * <p>Note that this method returns <em>default</em> mappings from store names to
+   * concrete implementations. Users may override these mappings, e.g. in MapReduce job
+   * configuration. You <em>should not</em> open a store returned by
+   * <code>getRequiredStores()</code> directly; you should look to a
+   * <code>Context</code> object or similar mechanism exposed by the Kiji framework to
+   * determine the actual {@link KeyValueStoreReader} instance to use.</p>
    *
    * @return a map from store names to default KeyValueStore implementations.
    */
