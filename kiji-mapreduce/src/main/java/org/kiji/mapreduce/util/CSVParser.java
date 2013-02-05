@@ -24,45 +24,70 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.kiji.annotations.ApiAudience;
 
 /**
- * Parser that extracts fields from RFC 4180(http://tools.ietf.org/html/rfc4180) compliant
- * CSV and TSV lines.
+ * Parser that extracts fields from RFC 4180 (http://tools.ietf.org/html/rfc4180) compliant
+ * CSV and TSV lines of text.
+ *
+ * <p>Typical invocations to parse CSV and TSV lines respectively:</p>
+ * <code>CSVParser.parseCSV("first,last")</code>.
+ * <code>TSVParser.parseTSV("first\tlast")</code>.
+ *
+ * <p>The difference between these methods and String.split(',') is that this handles the escaping
+ * of double quotes in the manner specified by RFC 4180 Section 2.7.</p>
  */
 @ApiAudience.Public
-public final class DelimitedParser {
+public final class CSVParser {
   public static final String CSV_DELIMITER = ",";
   public static final String TSV_DELIMITER = "\t";
 
   // RFC 4180 uses double quotes for the purposes of escaping.
   private static final char ESCAPE_CHARACTER = '"';
 
+  // Precompiled patterns for splitting CSVs and TSVs.
+  private static final Pattern CSV_PATTERN = Pattern.compile(CSV_DELIMITER);
+  private static final Pattern TSV_PATTERN = Pattern.compile(TSV_DELIMITER);
+
   /** Private constructor to prevent instantiation. */
-  private DelimitedParser() { }
+  private CSVParser() { }
 
   /**
-   * Parses the input text using the default(,) delimiter.
-   * @param line of text to parse the individual fields from
-   * @return list of strings for each of the parsed fields(using comma as a delimiter).
-   * @throws ParseException if there is an issue with escaping
+   * Parses the input text using comma as the delimiter.
+   *
+   * @param line of text to parse the individual fields from.
+   * @return list of strings for each of the parsed fields (using comma as a delimiter).
+   * @throws ParseException if there is an issue with escaping.
    */
-  public static List<String> parseFields(String line) throws ParseException {
-    return parseFields(line, CSV_DELIMITER);
+  public static List<String> parseCSV(String line) throws ParseException {
+    return parseFields(line, CSV_PATTERN);
+  }
+
+  /**
+   * Parses the input text using tab as the delimiter.
+   *
+   * @param line of text to parse the individual fields from.
+   * @return list of strings for each of the parsed fields (using tab as a delimiter).
+   * @throws ParseException if there is an issue with escaping.
+   */
+  public static List<String> parseTSV(String line) throws ParseException {
+    return parseFields(line, TSV_PATTERN);
   }
 
   /**
    * Parses the input text with the specified delimiter.
-   * @param line of text to parse the individual fields from
-   * @param delimiter the delimiter to separate the fields
-   * @return list of strings for the parsed fields
-   * @throws ParseException if there is an issue with escaping
+   *
+   * @param line of text to parse the individual fields from.
+   * @param pattern the pattern used to separate the fields
+   * @return list of strings for the parsed fields.
+   * @throws ParseException if there is an issue with escaping.
    */
-  public static List<String> parseFields(String line, String delimiter) throws ParseException {
+  private static List<String> parseFields(String line, Pattern pattern)
+      throws ParseException {
     List<String> derivedFields = new ArrayList();
-
-    List<String> tokens = Arrays.asList(line.split(delimiter));
+    List<String> tokens = Arrays.asList(pattern.split(line));
     Iterator<String> tokenItr = tokens.iterator();
 
     while (tokenItr.hasNext()) {
@@ -81,6 +106,9 @@ public final class DelimitedParser {
         boolean done = false;
         while (!done) {
           char c = token.charAt(pos);
+          // According to the specification laid out in section 2.7 of RFC 4180: fields can be
+          // enclosed in double quotes.  If double quotes appear inside of a field, it must be
+          // escaped by preceeding it with another double quote.
           if (c == ESCAPE_CHARACTER) {
             if (pos == token.length() - 1) {
               // If a single escape character(") is at the end, then we are done!
@@ -102,7 +130,7 @@ public final class DelimitedParser {
           // parse the next token into this string.
           if (pos == token.length()) {
             if (tokenItr.hasNext()) {
-              sb.append(delimiter);
+              sb.append(pattern.pattern());
               token = tokenItr.next();
               pos = 0;
             } else {
@@ -117,7 +145,6 @@ public final class DelimitedParser {
       }
       derivedFields.add(token);
     }
-
     return derivedFields;
   }
 

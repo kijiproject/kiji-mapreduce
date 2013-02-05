@@ -27,24 +27,23 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestDelimitedParser {
+public class TestCSVParser {
 
-  void assertStringListsEqual(List<String> expecteds, List<String> actuals) {
+  private void assertStringListsEqual(List<String> expecteds, List<String> actuals) {
     Assert.assertEquals("Number of parsed fields", expecteds.size(), actuals.size());
     Iterator<String> expectedItr = expecteds.iterator();
     Iterator<String> actualItr = actuals.iterator();
     while (expectedItr.hasNext()) {
       String expected = expectedItr.next();
       String actual = actualItr.next();
-      Assert.assertTrue(String.format("expected:<%s> but was:<%s>", expected, actual),
-          expected.equals(actual));
+      Assert.assertEquals(expected, actual);
     }
   }
 
   @Test
   public void testDeriveFields() throws ParseException {
     String line = "first,last,phone";
-    List<String> derivedFields = DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    List<String> derivedFields = CSVParser.parseCSV(line);
     List<String> expected = Arrays.asList("first", "last", "phone");
     assertStringListsEqual(expected, derivedFields);
 
@@ -53,25 +52,25 @@ public class TestDelimitedParser {
   @Test(expected = ParseException.class)
   public void testNonleadingQuote()  throws ParseException {
     String line = " \"first\"";
-    DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    CSVParser.parseCSV(line);
   }
 
   @Test(expected = ParseException.class)
   public void testUnmatchedEscapeCharacters()  throws ParseException {
     String line = "\"first";
-    DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    CSVParser.parseCSV(line);
   }
 
   @Test(expected = ParseException.class)
   public void testEndingWithAnEscapedDoubleQuote()  throws ParseException {
     String line = "\"first\"\"";
-    DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    CSVParser.parseCSV(line);
   }
 
   @Test
   public void testDoubleQuoteFollowedByComma()  throws ParseException {
     String line = "\"first\"\",\"";
-    List<String> derivedFields = DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    List<String> derivedFields = CSVParser.parseCSV(line);
     List<String> expected = Arrays.asList("first\",");
     assertStringListsEqual(expected, derivedFields);
   }
@@ -79,7 +78,8 @@ public class TestDelimitedParser {
   @Test
   public void testEscaping() throws ParseException {
     String line = "first,\"last\",phone";
-    List<String> derivedFields = DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    List<String> derivedFields = CSVParser.parseCSV(line);
+
     List<String> expected = Arrays.asList("first", "last", "phone");
     assertStringListsEqual(expected, derivedFields);
   }
@@ -87,7 +87,7 @@ public class TestDelimitedParser {
   @Test
   public void testDoubleQuoteInsideField() throws ParseException {
     String line = "first,\"la\"\"st\",phone";
-    List<String> derivedFields = DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    List<String> derivedFields = CSVParser.parseCSV(line);
     List<String> expected = Arrays.asList("first", "la\"st", "phone");
     assertStringListsEqual(expected, derivedFields);
   }
@@ -95,7 +95,15 @@ public class TestDelimitedParser {
   @Test
   public void testCommasInsideOfFields() throws ParseException {
     String line = "John Doe,\"San Francisco, CA\",94110";
-    List<String> derivedFields = DelimitedParser.parseFields(line, DelimitedParser.CSV_DELIMITER);
+    List<String> derivedFields = CSVParser.parseCSV(line);
+    List<String> expected = Arrays.asList("John Doe", "San Francisco, CA", "94110");
+    assertStringListsEqual(expected, derivedFields);
+  }
+
+  @Test
+  public void testTabSeparatedValuess() throws ParseException {
+    String line = "John Doe\tSan Francisco, CA\t94110";
+    List<String> derivedFields = CSVParser.parseTSV(line);
     List<String> expected = Arrays.asList("John Doe", "San Francisco, CA", "94110");
     assertStringListsEqual(expected, derivedFields);
   }
