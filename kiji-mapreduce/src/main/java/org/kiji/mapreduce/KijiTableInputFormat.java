@@ -31,8 +31,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HRegionInfo;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.mapreduce.TableSplit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -48,13 +46,13 @@ import org.kiji.annotations.ApiAudience;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.Kiji;
 import org.kiji.schema.KijiDataRequest;
+import org.kiji.schema.KijiRegion;
 import org.kiji.schema.KijiRowData;
 import org.kiji.schema.KijiRowScanner;
 import org.kiji.schema.KijiTable;
 import org.kiji.schema.KijiTableReader;
 import org.kiji.schema.KijiTableReader.KijiScannerOptions;
 import org.kiji.schema.KijiURI;
-import org.kiji.schema.hbase.HBaseFactory;
 import org.kiji.schema.impl.HBaseEntityId;
 import org.kiji.schema.impl.HBaseKijiRowData;
 import org.kiji.schema.impl.HBaseKijiTable;
@@ -98,19 +96,15 @@ public final class KijiTableInputFormat
     try {
       final KijiTable table = kiji.openTable(inputTableURI.getTable());
       try {
-        final HBaseFactory hbaseFactory = HBaseFactory.Provider.get();
-        final HBaseAdmin admin = hbaseFactory.getHBaseAdminFactory(inputTableURI).create(conf);
         final byte[] htableName = HBaseKijiTable.downcast(table).getHTable().getTableName();
-        final List<HRegionInfo> regions = admin.getTableRegions(htableName);
         final List<InputSplit> splits = Lists.newArrayList();
-        for (HRegionInfo region : regions) {
+        for (KijiRegion region : table.getRegions()) {
           final byte[] startKey = region.getStartKey();
           // TODO(KIJIMR-25): TableSplit.getLocation is bogus, should not be table.getName():
           final TableSplit tableSplit =
               new TableSplit(htableName, startKey, region.getEndKey(), table.getName());
           splits.add(new KijiTableSplit(tableSplit, startKey));
         }
-        admin.close();
         return splits;
       } finally {
         table.close();

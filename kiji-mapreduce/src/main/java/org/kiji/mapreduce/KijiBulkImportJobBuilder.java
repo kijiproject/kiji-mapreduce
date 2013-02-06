@@ -31,7 +31,7 @@ import org.kiji.mapreduce.mapper.BulkImportMapper;
 import org.kiji.mapreduce.output.KijiTableMapReduceJobOutput;
 import org.kiji.mapreduce.reducer.IdentityReducer;
 import org.kiji.schema.Kiji;
-import org.kiji.schema.impl.HBaseKijiTable;
+import org.kiji.schema.KijiTable;
 import org.kiji.schema.layout.KijiTableLayout;
 
 /** Builds a job that runs a KijiBulkImporter to import data into a Kiji table. */
@@ -53,7 +53,7 @@ public final class KijiBulkImportJobBuilder
   /** The job input. */
   private MapReduceJobInput mJobInput;
   /** The target kiji table for the import. */
-  private HBaseKijiTable mOutputTable;
+  private KijiTable mOutputTable;
 
   /** Constructs a builder for jobs that run a KijiBulkImporter. */
   private KijiBulkImportJobBuilder() {
@@ -114,7 +114,7 @@ public final class KijiBulkImportJobBuilder
       throw new JobConfigurationException(
           "Job output must be a KijiTableMapReduceJobOutput or a subclass.");
     }
-    mOutputTable = HBaseKijiTable.downcast(((KijiTableMapReduceJobOutput) jobOutput).getTable());
+    mOutputTable = ((KijiTableMapReduceJobOutput) jobOutput).getTable();
     jobOutput.configure(job);
 
     // Construct the bulk importer instance.
