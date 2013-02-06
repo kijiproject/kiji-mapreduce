@@ -45,6 +45,7 @@ import org.kiji.schema.KijiColumnName;
 import org.kiji.schema.layout.KijiTableLayout;
 import org.kiji.schema.util.FromJson;
 import org.kiji.schema.util.KijiNameValidator;
+import org.kiji.schema.util.ResourceUtils;
 import org.kiji.schema.util.ToJson;
 
 /**
@@ -57,20 +58,38 @@ import org.kiji.schema.util.ToJson;
  *   through the mapping.
  * </p>
  *
+ * Sample table import descriptor:<pre><code>
+ * {
+ *   name : "foo", // destination table of the import
+ *   families : [ {
+ *     name : "info" // column family for the import
+ *     columns : [ {
+ *       name : "first_name", // name of the column within the column family
+ *       source : "first" // field in the source to import from
+ *     }, {
+ *      name : "last_name",
+ *      source : "last"
+ *     } ],
+ *   } ],
+ *   entityIdSource : "first", // field in the source to generate the entity id from.
+ *   version : "imports-1.0" // format version number of the import descriptor
+ * }
+ * </code></pre>
+ *
  * <h1>Overall structure</h1>
  * <p>At the top-level, a table import descriptor contains:
  * <ul>
  *   <li>the table that is the destination of the import.</li>
  *   <li>the table column families.</li>
+ *   <li>the source for the entity id.</li>
+ *   <li>format version of the import descriptor.</li>
  * </ul>
  * </p>
  *
  * <p>Each column family has:
  * <ul>
- *   <li>a name for each column</li>
- *   <li>the source for each column</li>
- *   <li>for map-type families, the Avro schema of the cell values;</li>
- *   <li>for group-type families, the collection of columns in the group.</li>
+ *   <li>the name of the destination column.</li>
+ *   <li>the name of the source field to import from.</li>
  * </ul>
  * </p>
  *
@@ -86,9 +105,6 @@ public final class KijiTableImportDescriptor {
     /** Concrete layout of a column. */
     @ApiAudience.Public
     public final class ColumnLayout {
-      /** Column layout descriptor. */
-      private final ColumnDesc mDesc;
-
       /** Column name. */
       private final String mName;
 
@@ -103,8 +119,6 @@ public final class KijiTableImportDescriptor {
        */
       public ColumnLayout(ColumnDesc desc)
           throws InvalidTableImportDescriptorException {
-        mDesc = Preconditions.checkNotNull(desc);
-
         mName = desc.getName();
         mSource = desc.getSource();
 
@@ -112,11 +126,6 @@ public final class KijiTableImportDescriptor {
           throw new InvalidTableImportDescriptorException(String.format(
               "Invalid column name: '%s'.", desc.getName()));
         }
-      }
-
-      /** @return the Avro descriptor for this column. */
-      public ColumnDesc getDesc() {
-        return mDesc;
       }
 
       /** @return the name for the Kiji column. */
@@ -146,7 +155,6 @@ public final class KijiTableImportDescriptor {
     /** Map column qualifier name (no aliases) to column layout. */
     private final ImmutableMap<String, ColumnLayout> mColumnMap;
 
-    // CSOFF: MethodLengthCheck
     /**
      * Builds a new family layout instance.
      *
@@ -209,9 +217,8 @@ public final class KijiTableImportDescriptor {
   private final TableImportDescriptorDesc mDesc;
 
   /** Column name to import source mapping. */
-  private /*final*/ ImmutableMap<KijiColumnName, String> mColumnNameToSource;
+  private ImmutableMap<KijiColumnName, String> mColumnNameToSource;
 
-  // CSOFF: MethodLengthCheck
   /**
    * Constructs a KijiTableImportDescriptor from an Avro descriptor.
    *
@@ -254,14 +261,12 @@ public final class KijiTableImportDescriptor {
         }
         KijiColumnName kijiColumnName = new KijiColumnName(familyLayout.getName(),
             columnLayout.getName());
-        columnNameToSource.put(kijiColumnName, columnLayout.getDesc().getSource());
+        columnNameToSource.put(kijiColumnName, columnLayout.getSource());
       }
     }
 
     mColumnNameToSource = ImmutableMap.copyOf(columnNameToSource);
-
   }
-  // CSON: MethodLengthCheck
 
   /** @return the Avro descriptor for this table layout. */
   public TableImportDescriptorDesc getDesc() {
@@ -336,7 +341,8 @@ public final class KijiTableImportDescriptor {
   }
 
   /**
-   * Loads a table import mapping from the specified JSON text.
+   * Loads a table import mapping from the specified JSON text.  The InputStream passed into this
+   * method is closed upon completion.
    *
    * @param istream Input stream containing the JSON text.
    * @return the parsed table layout.
@@ -349,7 +355,7 @@ public final class KijiTableImportDescriptor {
       final KijiTableImportDescriptor layout = new KijiTableImportDescriptor(desc);
       return layout;
     } finally {
-      IOUtils.closeQuietly(istream);
+      ResourceUtils.closeOrLog(istream);
     }
   }
 
@@ -382,25 +388,6 @@ public final class KijiTableImportDescriptor {
   }
 
   /**
-   * Validates that the passed in sources contain the necessary data for this import mapping.  This
-   * is done by ensuring that every source field exists in the passed in source field collection.
-   * @param sourceFields a collection of fields in the source
-   * @throws InvalidTableImportDescriptorException if there is a field in the mapping that doesn't
-   *   exist
-   *
-   */
-  public void validateSource(Collection<String> sourceFields)
-      throws InvalidTableImportDescriptorException {
-    for (String source : getColumnNameSourceMap().values()) {
-      if (!sourceFields.contains(source)) {
-        throw new InvalidTableImportDescriptorException(
-            String.format("Source fields do not contain column '%s'.",
-              source));
-      }
-    }
-  }
-
-  /**
    * Validates that this table import descriptor can import data into the specified layout.  This
    * is done by ensuring that every destination column exists in the specified table's layout.
    *
@@ -415,8 +402,8 @@ public final class KijiTableImportDescriptor {
       if (!columnNames.contains(columnName)) {
         throw new InvalidTableImportDescriptorException(
             String.format("Table '%s' does not contain column '%s'.",
-              tableLayout.getName(),
-              columnName));
+                tableLayout.getName(),
+                columnName));
       }
     }
   }

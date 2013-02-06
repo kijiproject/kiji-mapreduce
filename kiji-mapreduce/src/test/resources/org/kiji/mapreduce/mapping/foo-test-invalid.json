@@ -21,10 +21,10 @@
   families : [ {
     name : "info",
     columns : [ {
-      name : "first_name-nonexistant",
+      name : "first_name_nonexistant",
       source : "first-nonexistant"
     } ]
   } ],
   entityIdSource : "first",
-  version : "kiji-1.0"
+  version : "imports-1.0"
 }
