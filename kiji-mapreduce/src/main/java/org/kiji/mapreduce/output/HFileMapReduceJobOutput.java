@@ -33,7 +33,6 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HConstants;
-import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.mapreduce.hadoopbackport.TotalOrderPartitioner;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.NullWritable;
@@ -51,6 +50,7 @@ import org.kiji.mapreduce.JobConfigurationException;
 import org.kiji.mapreduce.KijiConfKeys;
 import org.kiji.mapreduce.KijiTableContext;
 import org.kiji.mapreduce.context.HFileWriterContext;
+import org.kiji.schema.KijiRegion;
 import org.kiji.schema.KijiRowKeySplitter;
 import org.kiji.schema.KijiTable;
 
@@ -146,7 +146,7 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
 
     if (NUM_SPLITS_AUTO == nsplits) {
       final List<HFileKeyValue> startKeys = Lists.newArrayList();
-      for (HRegionInfo region : table.getRegions()) {
+      for (KijiRegion region : table.getRegions()) {
         startKeys.add(HFileKeyValue.createFromRowKey(region.getStartKey()));
       }
       return startKeys;

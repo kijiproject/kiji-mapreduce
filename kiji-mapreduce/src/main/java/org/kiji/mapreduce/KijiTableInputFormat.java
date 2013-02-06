@@ -31,7 +31,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.mapreduce.TableSplit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -47,6 +46,7 @@ import org.kiji.annotations.ApiAudience;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.Kiji;
 import org.kiji.schema.KijiDataRequest;
+import org.kiji.schema.KijiRegion;
 import org.kiji.schema.KijiRowData;
 import org.kiji.schema.KijiRowScanner;
 import org.kiji.schema.KijiTable;
@@ -98,7 +98,7 @@ public final class KijiTableInputFormat
       try {
         final byte[] htableName = HBaseKijiTable.downcast(table).getHTable().getTableName();
         final List<InputSplit> splits = Lists.newArrayList();
-        for (HRegionInfo region : table.getRegions()) {
+        for (KijiRegion region : table.getRegions()) {
           final byte[] startKey = region.getStartKey();
           // TODO(KIJIMR-25): TableSplit.getLocation is bogus, should not be table.getName():
           final TableSplit tableSplit =
