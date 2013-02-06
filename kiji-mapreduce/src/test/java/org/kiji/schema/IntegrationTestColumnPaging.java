@@ -164,8 +164,6 @@ public class IntegrationTestColumnPaging extends AbstractKijiIntegrationTest {
           .values()) {
         locations.add(location);
       }
-      LOG.debug("This size of our locations list is [{}].", locations.size());
-      assertEquals(5, locations.size());
 
       assertFalse("Our page should not have a fifth page.", locationPager.hasNext());
 
@@ -188,8 +186,6 @@ public class IntegrationTestColumnPaging extends AbstractKijiIntegrationTest {
       assertEquals(4, jobs.size());
       // We should try to get the next page
       assertTrue(jobsPager.hasNext());
-      //But it should be empty.
-      assertTrue(jobsPager.next().getValues("jobs").isEmpty());
 
       context.write(new AvroKey(name.toString() + "-locations"),
           new AvroValue<List<CharSequence>>(locations));
