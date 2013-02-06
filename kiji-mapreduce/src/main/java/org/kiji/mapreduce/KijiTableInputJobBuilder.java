@@ -34,7 +34,6 @@ import org.kiji.schema.KijiDataRequestException;
 import org.kiji.schema.KijiDataRequestValidator;
 import org.kiji.schema.KijiTable;
 import org.kiji.schema.filter.KijiRowFilter;
-import org.kiji.schema.impl.HBaseKijiTable;
 import org.kiji.schema.layout.InvalidLayoutException;
 import org.kiji.schema.layout.KijiTableLayout;
 
@@ -128,8 +127,7 @@ public abstract class KijiTableInputJobBuilder<T extends KijiTableInputJobBuilde
   protected MapReduceJobInput getJobInput() {
     KijiTableMapReduceJobInput.RowOptions rowOptions
         = new KijiTableMapReduceJobInput.RowOptions(mStartRow, mLimitRow, mRowFilter);
-    return new KijiTableMapReduceJobInput(
-        HBaseKijiTable.downcast(mInputTable), getDataRequest(), rowOptions);
+    return new KijiTableMapReduceJobInput(mInputTable, getDataRequest(), rowOptions);
   }
 
   /** {@inheritDoc} */
