@@ -60,6 +60,7 @@ public abstract class JobTool<B extends MapReduceJobBuilder> extends VersionVali
   protected JobInputSpec mInputSpec;
   protected JobOutputSpec mOutputSpec;
 
+  /** {@inheritDoc} */
   @Override
   protected void validateFlags() throws Exception {
     if (mInputFlag.isEmpty()) {
@@ -91,6 +92,9 @@ public abstract class JobTool<B extends MapReduceJobBuilder> extends VersionVali
    */
   protected void configure(B jobBuilder)
       throws ClassNotFoundException, IOException, JobIOSpecParseException {
+    // Use default environment configuration:
+    jobBuilder.withConf(getConf());
+
     // Add user dependency jars if specified.
     if (!mLibDir.isEmpty()) {
       jobBuilder.addJarDirectory(mLibDir);
@@ -102,10 +106,11 @@ public abstract class JobTool<B extends MapReduceJobBuilder> extends VersionVali
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   protected int run(List<String> nonFlagArgs) throws Exception {
     // Create the job builder.
-    B jobBuilder = createJobBuilder();
+    final B jobBuilder = createJobBuilder();
     if (null == jobBuilder) {
       throw new InternalKijiError("Unable to create job builder.");
     }
