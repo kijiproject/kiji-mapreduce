@@ -144,7 +144,6 @@ public final class KijiProduceJobBuilder extends KijiTableInputJobBuilder<KijiPr
     if (null == mProducerClass) {
       throw new JobConfigurationException("Must specify a producer.");
     }
-    mProducer = ReflectionUtils.newInstance(mProducerClass, job.getConfiguration());
     mDataRequest = mProducer.getDataRequest();
 
     // Serialize the producer class name into the job configuration.
@@ -160,6 +159,8 @@ public final class KijiProduceJobBuilder extends KijiTableInputJobBuilder<KijiPr
     mReducer = new IdentityReducer<Object, Object>();
 
     job.setJobName("Kiji produce: " + mProducerClass.getSimpleName());
+
+    mProducer = ReflectionUtils.newInstance(mProducerClass, job.getConfiguration());
 
     // Configure the table input job.
     super.configureJob(job);

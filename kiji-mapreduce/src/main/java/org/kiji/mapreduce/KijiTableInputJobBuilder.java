@@ -73,9 +73,11 @@ public abstract class KijiTableInputJobBuilder<T extends KijiTableInputJobBuilde
   @SuppressWarnings("unchecked")
   public T withJobInput(KijiTableMapReduceJobInput input) {
     mInputTableURI = input.getInputTableURI();
-    mStartRow = input.getRowOptions().getStartRow();
-    mLimitRow = input.getRowOptions().getLimitRow();
-    mRowFilter = input.getRowOptions().getRowFilter();
+    if (input.getRowOptions() != null) {
+      mStartRow = input.getRowOptions().getStartRow();
+      mLimitRow = input.getRowOptions().getLimitRow();
+      mRowFilter = input.getRowOptions().getRowFilter();
+    }
     return (T) this;
   }
 

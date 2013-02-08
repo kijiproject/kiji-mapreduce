@@ -141,7 +141,6 @@ public final class KijiBulkImportJobBuilder
     if (null == mBulkImporterClass) {
       throw new JobConfigurationException("Must specify a bulk importer.");
     }
-    mBulkImporter = ReflectionUtils.newInstance(mBulkImporterClass, conf);
     conf.setClass(
         KijiConfKeys.KIJI_BULK_IMPORTER_CLASS, mBulkImporterClass, KijiBulkImporter.class);
 
@@ -153,7 +152,9 @@ public final class KijiBulkImportJobBuilder
 
     job.setJobName("Kiji bulk import: " + mBulkImporterClass.getSimpleName());
 
-    // Configure the MapReduce job.
+    mBulkImporter = ReflectionUtils.newInstance(mBulkImporterClass, conf);
+
+    // Configure the MapReduce job (requires mBulkImporter to be set properly):
     super.configureJob(job);
   }
 
