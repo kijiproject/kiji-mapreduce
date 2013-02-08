@@ -30,6 +30,7 @@ import org.kiji.annotations.ApiAudience;
 import org.kiji.common.flags.Flag;
 import org.kiji.mapreduce.KijiProduceJobBuilder;
 import org.kiji.mapreduce.KijiProducer;
+import org.kiji.mapreduce.output.DirectKijiTableMapReduceJobOutput;
 import org.kiji.mapreduce.output.HFileMapReduceJobOutput;
 import org.kiji.mapreduce.output.KijiTableMapReduceJobOutput;
 import org.kiji.schema.tools.KijiToolLauncher;
@@ -110,7 +111,7 @@ public final class KijiProduce extends KijiJobTool<KijiProduceJobBuilder> {
     final int jobStatus = super.run(nonFlagArgs);
 
     // TODO: Move this to job outputs?
-    if (mOutput instanceof KijiTableMapReduceJobOutput) {
+    if (mOutput instanceof DirectKijiTableMapReduceJobOutput) {
       if (jobStatus == 0) {
         LOG.info("Producer {} for table {} completed successfully.",
             mProducerName, mOutput.getOutputTableURI());

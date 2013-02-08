@@ -97,8 +97,7 @@ public final class MapReduceJobOutputFactory {
     case HFILE:
       return new HFileMapReduceJobOutput();
     default:
-      throw new RuntimeException(String.format(
-          "Unhandled job output format: '%s' from spec '%s'.", format));
+      throw new RuntimeException(String.format("Unhandled job output format: '%s'.", format));
     }
   }
 }

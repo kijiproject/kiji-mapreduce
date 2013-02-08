@@ -101,9 +101,13 @@ public final class KijiBulkImportJobBuilder
   }
 
   /**
-   * {@inheritDoc}
+   * Configures the job output.
    *
-   * @param jobOutput Bulk importer must output to a Kiji table.
+   * @param jobOutput The output for the job.
+   *     Bulk importer must output to a Kiji table.
+   * @return This builder instance so you may chain configuration method calls.
+   *
+   * {@inheritDoc}
    */
   @Override
   public KijiBulkImportJobBuilder withOutput(MapReduceJobOutput jobOutput) {

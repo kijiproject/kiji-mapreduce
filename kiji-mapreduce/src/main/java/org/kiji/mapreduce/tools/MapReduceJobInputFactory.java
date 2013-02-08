@@ -92,6 +92,7 @@ public final class MapReduceJobInputFactory {
       return new WholeTextFileMapReduceJobInput();
     case SEQUENCE:
       return new SequenceFileMapReduceJobInput();
+    // TODO(KIJIMR-61)
     // case MAP_FILE:
     //   throw new IOException(String.format(
     //       "Map files are not supported as job input in spec '%s'.", ssm));

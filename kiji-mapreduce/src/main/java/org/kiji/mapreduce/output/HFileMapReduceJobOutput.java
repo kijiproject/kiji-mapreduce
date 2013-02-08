@@ -59,6 +59,7 @@ import org.kiji.schema.KijiTable;
 import org.kiji.schema.KijiURI;
 import org.kiji.schema.impl.HBaseKiji;
 import org.kiji.schema.impl.HBaseKijiTable;
+import org.kiji.schema.layout.KijiTableLayout;
 
 /**
  * MapReduce output configuration for Kiji jobs that generate HFiles.
@@ -79,7 +80,7 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
   /** The path to the directory to create the HFiles in. */
   private Path mPath;
 
-  /** Default constructor. */
+  /** Default constructor. Do not use directly. */
   public HFileMapReduceJobOutput() {
   }
 
@@ -167,7 +168,7 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
         if (NUM_SPLITS_AUTO == nsplits) {
           return getRegionStartKeys(table);
         } else {
-          switch (table.getLayout().getDesc().getKeysFormat().getEncoding()) {
+          switch (KijiTableLayout.getEncoding(table.getLayout().getDesc().getKeysFormat())) {
           case RAW: {
             // The user has explicitly specified how many HFiles to create, but this is not
             // possible when row key hashing is disabled.
@@ -184,7 +185,7 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
           }
           default:
             throw new RuntimeException("Unhandled row key encoding: "
-                + table.getLayout().getDesc().getKeysFormat().getEncoding());
+                + KijiTableLayout.getEncoding(table.getLayout().getDesc().getKeysFormat()));
           }
           return generateEvenStartKeys(nsplits);
         }

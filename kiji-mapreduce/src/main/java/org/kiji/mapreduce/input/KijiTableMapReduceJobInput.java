@@ -50,9 +50,6 @@ public final class KijiTableMapReduceJobInput extends MapReduceJobInput {
   /** URI of the input Kiji table. */
   private KijiURI mInputTableURI;
 
-//  /** The table to read the job input from. */
-//  private KijiTable mInputTable;
-
   /** Specifies which columns and versions of cells to read from the table. */
   private KijiDataRequest mDataRequest;
 
@@ -161,7 +158,7 @@ public final class KijiTableMapReduceJobInput extends MapReduceJobInput {
         Base64.encodeBase64String(SerializationUtils.serialize(mDataRequest));
     conf.set(KijiConfKeys.KIJI_INPUT_DATA_REQUEST, dataRequestB64);
 
-    // TODO: Serialize the row options (filters)
+    // TODO(): Serialize the row options (filters)
   }
 
   /** {@inheritDoc} */

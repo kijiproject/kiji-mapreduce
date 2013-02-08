@@ -46,7 +46,7 @@ public class HFileReducerMapReduceJobOutput extends MapReduceJobOutput {
   /** {@inheritDoc} */
   @Override
   public void initialize(Map<String, String> params) throws IOException {
-    // TODO: this is ugly and should be fixed
+    // TODO(): this is ugly and should be fixed
     throw new UnsupportedOperationException();
   }
 

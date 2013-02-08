@@ -41,7 +41,7 @@ public abstract class FileMapReduceJobOutput extends MapReduceJobOutput {
   /** The number of output file splits. */
   private int mNumSplits;
 
-  /** Default constructor. */
+  /** Default constructor. Do not use directly. */
   FileMapReduceJobOutput() {
   }
 

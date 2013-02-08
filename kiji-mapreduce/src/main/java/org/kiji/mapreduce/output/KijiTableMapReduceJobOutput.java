@@ -42,7 +42,7 @@ public abstract class KijiTableMapReduceJobOutput extends MapReduceJobOutput {
   /** Number of reduce tasks to use. */
   private int mNumReduceTasks;
 
-  /** Default constructor. */
+  /** Default constructor. Do not use directly. */
   KijiTableMapReduceJobOutput() {
   }
 

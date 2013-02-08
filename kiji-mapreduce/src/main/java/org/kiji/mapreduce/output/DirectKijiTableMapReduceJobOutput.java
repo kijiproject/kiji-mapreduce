@@ -45,7 +45,7 @@ import org.kiji.schema.KijiURI;
 @ApiAudience.Public
 @Inheritance.Sealed
 public class DirectKijiTableMapReduceJobOutput extends KijiTableMapReduceJobOutput {
-  /** Default constructor. */
+  /** Default constructor. Do not use directly. */
   public DirectKijiTableMapReduceJobOutput() {
   }
 

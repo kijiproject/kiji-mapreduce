@@ -41,7 +41,7 @@ import org.kiji.schema.tools.ToolUtils;
 @ApiAudience.Framework
 @Inheritance.Extensible
 public abstract class KijiJobTool<B extends KijiTableInputJobBuilder> extends JobTool<B> {
-  // TODO: Update usage doc for entity IDs:
+  // TODO(SCHEMA-185): Update usage doc for entity IDs:
   @Flag(name="start-row", usage="The row to start scanning at (inclusive)")
   protected String mStartRow = "";
 
@@ -49,7 +49,7 @@ public abstract class KijiJobTool<B extends KijiTableInputJobBuilder> extends Jo
   protected String mLimitRow = "";
 
   /** Job input must be a Kiji table. */
-  private KijiTableMapReduceJobInput mJobInput;
+  private KijiTableMapReduceJobInput mJobInput = null;
 
   /** Creates a new <code>KijiTool</code> instance. */
   protected KijiJobTool() {
@@ -81,12 +81,14 @@ public abstract class KijiJobTool<B extends KijiTableInputJobBuilder> extends Jo
     try {
       final KijiTable table = kiji.openTable(mJobInput.getInputTableURI().getTable());
       try {
-        final EntityIdFactory eidFactory = table.getEntityIdFactory();
+        final EntityIdFactory eidFactory = EntityIdFactory.getFactory(table.getLayout());
         if (!mStartRow.isEmpty()) {
-          jobBuilder.withStartRow(eidFactory.fromHBaseRowKey(ToolUtils.parseRowKeyFlag(mStartRow)));
+          jobBuilder.withStartRow(
+              eidFactory.getEntityIdFromHBaseRowKey(ToolUtils.parseRowKeyFlag(mStartRow)));
         }
         if (!mLimitRow.isEmpty()) {
-          jobBuilder.withLimitRow(eidFactory.fromHBaseRowKey(ToolUtils.parseRowKeyFlag(mLimitRow)));
+          jobBuilder.withLimitRow(
+              eidFactory.getEntityIdFromHBaseRowKey(ToolUtils.parseRowKeyFlag(mLimitRow)));
         }
       } finally {
         table.close();

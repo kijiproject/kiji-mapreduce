@@ -41,7 +41,7 @@ import org.kiji.schema.tools.VersionValidatedTool;
 @Inheritance.Extensible
 public abstract class JobTool<B extends MapReduceJobBuilder> extends VersionValidatedTool {
 
-  // TODO: Better usage doc:
+  // TODO(): Better usage doc:
   @Flag(name="input",
       usage="Job input specification: --input=\"format=<input-format> ...\".")
   protected String mInputFlag = "";

@@ -37,7 +37,7 @@ public final class HTableMapReduceJobInput extends MapReduceJobInput {
   /** The name of the HTable to use as job input. */
   private String mTableName;
 
-  /** Default constructor. */
+  /** Default constructor. Do not use directly. */
   public HTableMapReduceJobInput() {
   }
 
