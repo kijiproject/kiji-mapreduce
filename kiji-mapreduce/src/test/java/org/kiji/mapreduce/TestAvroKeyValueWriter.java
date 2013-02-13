@@ -21,16 +21,16 @@ package org.kiji.mapreduce;
 
 import org.junit.Assert;
 import org.junit.Test;
-import scala.testing.SUnit;
 
 import org.kiji.mapreduce.reducer.IdentityReducer;
 
-public class TestAvroValueWriter {
+public class TestAvroKeyValueWriter {
   @Test
   public void testIdentityReducer() throws Exception {
     // This test insures that the IdentityReducer can be used to write to Avro writer jobs
     // without modification,
     IdentityReducer identityReducer = new IdentityReducer();
     Assert.assertTrue(identityReducer instanceof AvroValueWriter);
+    Assert.assertTrue(identityReducer instanceof AvroKeyWriter);
   }
 }

@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.mapreduce.AvroKeyWriter;
 import org.kiji.mapreduce.AvroValueWriter;
 import org.kiji.mapreduce.KijiReducer;
 
@@ -41,8 +42,8 @@ import org.kiji.mapreduce.KijiReducer;
  * IdentityReducer only in that it extends KijiReducer so it can be
  * run within the Kiji framework.
  *
- * This class implements the {@link AvroValueWriter} interface so that it can be used for
- * Avro output keys.
+ * This class implements the {@link AvroKeyWriter} and the {@link AvroValueWriter} interfaces
+ * so that it can be used for Avro output
  *
  * @param <K> The MapReduce input key type.
  * @param <V> The MapReduce input value type.
@@ -50,7 +51,7 @@ import org.kiji.mapreduce.KijiReducer;
 @ApiAudience.Public
 public final class IdentityReducer<K, V>
     extends KijiReducer<K, V, K, V>
-    implements Configurable, AvroValueWriter {
+    implements Configurable, AvroKeyWriter, AvroValueWriter {
   private static final Logger LOG = LoggerFactory.getLogger(IdentityReducer.class);
 
   /** The Hadoop configuration. */
@@ -87,6 +88,24 @@ public final class IdentityReducer<K, V>
   @Override
   public Class<?> getOutputValueClass() {
     return new JobConf(getConf()).getMapOutputValueClass();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Schema getAvroKeyWriterSchema() throws IOException {
+    Class<? extends Mapper<?, ?, ?, ?>> mapperClass;
+    try {
+      mapperClass = new Job(getConf()).getMapperClass();
+    } catch (ClassNotFoundException e) {
+      throw new IOException("Mapper class was not configured. "
+          + "Could not infer avro key writer schema.", e);
+    }
+    Mapper<?, ?, ?, ?> mapper = ReflectionUtils.newInstance(mapperClass, getConf());
+    if (mapper instanceof AvroKeyWriter) {
+      LOG.info("Mapper is an AvroKeyWriter. Using the same schema for Reducer output keys.");
+      return ((AvroKeyWriter) mapper).getAvroKeyWriterSchema();
+    }
+    return null;
   }
 
   /** {@inheritDoc} */
