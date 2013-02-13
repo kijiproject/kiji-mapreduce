@@ -21,13 +21,18 @@ package org.kiji.mapreduce.reducer;
 
 import java.io.IOException;
 
+import org.apache.avro.Schema;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.mapreduce.AvroValueWriter;
 import org.kiji.mapreduce.KijiReducer;
 
 /**
@@ -36,13 +41,16 @@ import org.kiji.mapreduce.KijiReducer;
  * IdentityReducer only in that it extends KijiReducer so it can be
  * run within the Kiji framework.
  *
+ * This class implements the {@link AvroValueWriter} interface so that it can be used for
+ * Avro output keys.
+ *
  * @param <K> The MapReduce input key type.
  * @param <V> The MapReduce input value type.
  */
 @ApiAudience.Public
 public final class IdentityReducer<K, V>
     extends KijiReducer<K, V, K, V>
-    implements Configurable {
+    implements Configurable, AvroValueWriter {
   private static final Logger LOG = LoggerFactory.getLogger(IdentityReducer.class);
 
   /** The Hadoop configuration. */
@@ -79,5 +87,23 @@ public final class IdentityReducer<K, V>
   @Override
   public Class<?> getOutputValueClass() {
     return new JobConf(getConf()).getMapOutputValueClass();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Schema getAvroValueWriterSchema() throws IOException {
+    Class<? extends Mapper<?, ?, ?, ?>> mapperClass;
+    try {
+      mapperClass = new Job(getConf()).getMapperClass();
+    } catch (ClassNotFoundException e) {
+      throw new IOException("Mapper class was not configured. "
+          + "Could not infer avro value writer schema.", e);
+    }
+    Mapper<?, ?, ?, ?> mapper = ReflectionUtils.newInstance(mapperClass, getConf());
+    if (mapper instanceof AvroValueWriter) {
+      LOG.info("Mapper is an AvroValueWriter. Using the same schema for Reducer output values.");
+      return ((AvroValueWriter) mapper).getAvroValueWriterSchema();
+    }
+    return null;
   }
 }
