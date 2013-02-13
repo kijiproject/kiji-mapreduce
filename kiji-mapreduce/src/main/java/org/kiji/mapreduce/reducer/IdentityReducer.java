@@ -21,16 +21,14 @@ package org.kiji.mapreduce.reducer;
 
 import java.io.IOException;
 
-import org.apache.avro.Schema;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.AvroValueWriter;
+import org.kiji.mapreduce.KijiReducer;
 
 /**
  * This MapReduce reducer will pass through all of the input key-value
@@ -43,9 +41,24 @@ import org.kiji.mapreduce.AvroValueWriter;
  */
 @ApiAudience.Public
 public final class IdentityReducer<K, V>
-    extends KeyPassThroughReducer<K, V, V>
-    implements AvroValueWriter {
+    extends KijiReducer<K, V, K, V>
+    implements Configurable {
   private static final Logger LOG = LoggerFactory.getLogger(IdentityReducer.class);
+
+  /** The Hadoop configuration. */
+  private Configuration mConf;
+
+  /** {@inheritDoc} */
+  @Override
+  public void setConf(Configuration conf) {
+    mConf = conf;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Configuration getConf() {
+    return mConf;
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -66,23 +79,5 @@ public final class IdentityReducer<K, V>
   @Override
   public Class<?> getOutputValueClass() {
     return new JobConf(getConf()).getMapOutputValueClass();
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public Schema getAvroValueWriterSchema() throws IOException {
-    Class<? extends Mapper<?, ?, ?, ?>> mapperClass;
-    try {
-      mapperClass = new Job(getConf()).getMapperClass();
-    } catch (ClassNotFoundException e) {
-      throw new IOException("Mapper class was not configured. "
-          + "Could not infer avro value writer schema.", e);
-    }
-    Mapper<?, ?, ?, ?> mapper = ReflectionUtils.newInstance(mapperClass, getConf());
-    if (mapper instanceof AvroValueWriter) {
-      LOG.info("Mapper is an AvroValueWriter. Using the same schema for Reducer output values.");
-      return ((AvroValueWriter) mapper).getAvroValueWriterSchema();
-    }
-    return null;
   }
 }
