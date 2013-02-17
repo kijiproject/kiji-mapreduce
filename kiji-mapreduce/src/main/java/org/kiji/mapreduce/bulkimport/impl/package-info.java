@@ -18,12 +18,7 @@
  */
 
 /**
- * Bulk importer classes for Kiji MapReduce clients.
- *
- * This package is mainly comprised of the class
- * {@link org.kiji.mapreduce.bulkimport.KijiTableImportDescriptor} which contains relevant
- * descriptor information for how to configure aspects of bulk importing(for example the mapping
- * of source files in the input to the destination KijiTable columns.
+ * Internal classes for Kiji MapReduce bulk importers. These classes should not be used by clients.
  */
 
-package org.kiji.mapreduce.bulkimport;
+package org.kiji.mapreduce.bulkimport.impl;

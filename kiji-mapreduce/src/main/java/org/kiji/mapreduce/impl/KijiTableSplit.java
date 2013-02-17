@@ -37,7 +37,7 @@ import org.kiji.annotations.ApiAudience;
  * does a better job handling default split sizes.
  */
 @ApiAudience.Private
-final public class KijiTableSplit extends TableSplit {
+public final class KijiTableSplit extends TableSplit {
   private byte[] mRegionStartKey;
   private long mSplitSize; // lazily calculated and populated via getLength().
 

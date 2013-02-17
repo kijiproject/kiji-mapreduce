@@ -1,5 +1,5 @@
 /**
- * (c) Copyright 2013 WibiData, Inc.
+ * (c) Copyright 2012 WibiData, Inc.
  *
  * See the NOTICE file distributed with this work for additional
  * information regarding copyright ownership.
@@ -18,12 +18,7 @@
  */
 
 /**
- * Bulk importer classes for Kiji MapReduce clients.
- *
- * This package is mainly comprised of the class
- * {@link org.kiji.mapreduce.bulkimport.KijiTableImportDescriptor} which contains relevant
- * descriptor information for how to configure aspects of bulk importing(for example the mapping
- * of source files in the input to the destination KijiTable columns.
+ * Internal implementation details for Kiji MapReduce's job input classes. Clients should not
+ * use these.
  */
-
-package org.kiji.mapreduce.bulkimport;
+package org.kiji.mapreduce.input.impl;

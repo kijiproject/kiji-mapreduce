@@ -36,7 +36,6 @@ import org.kiji.mapreduce.KijiTableContext;
 import org.kiji.mapreduce.avro.AvroKeyReader;
 import org.kiji.mapreduce.avro.AvroValueReader;
 import org.kiji.mapreduce.bulkimport.KijiBulkImporter;
-import org.kiji.mapreduce.bulkimport.impl.KijiBulkImporters;
 import org.kiji.mapreduce.framework.HFileKeyValue;
 import org.kiji.mapreduce.framework.JobHistoryCounters;
 import org.kiji.mapreduce.impl.HTableReader;
