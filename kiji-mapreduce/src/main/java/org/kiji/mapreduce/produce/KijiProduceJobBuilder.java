@@ -80,6 +80,7 @@ public final class KijiProduceJobBuilder extends KijiTableInputJobBuilder<KijiPr
   private KijiProduceJobBuilder() {
     mProducerClass = null;
     mNumThreadsPerMapper = DEFAULT_NUM_THREADS_PER_MAPPER;
+    mJobOutput = null;
     mProducer = null;
     mMapper = null;
     mReducer = null;
@@ -120,11 +121,18 @@ public final class KijiProduceJobBuilder extends KijiTableInputJobBuilder<KijiPr
   /**
    * {@inheritDoc}
    *
-   * @param jobOutput Output table of the producer must match the input table.
+   * @param jobOutput Output table of the producer must match the input table. Must be an instance
+   *     of KijiTableMapReduceJobOutput or a subclass.
    */
   @Override
   public KijiProduceJobBuilder withOutput(MapReduceJobOutput jobOutput) {
-    return withOutput((KijiTableMapReduceJobOutput) jobOutput);
+    if (jobOutput instanceof KijiTableMapReduceJobOutput) {
+      return withOutput((KijiTableMapReduceJobOutput) jobOutput);
+    } else {
+      // Throw a more helpful debugging message.
+      throw new RuntimeException("jobOutput parameter of KijiProduceJobBuilder.withOutput() must "
+          + "be a KijiTableMapReduceJobOutput.");
+    }
   }
 
   /**

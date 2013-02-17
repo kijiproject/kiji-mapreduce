@@ -47,7 +47,7 @@ import org.kiji.annotations.ApiAudience;
  *
  * <p>HFileKeyValue wraps a <code>KeyValue</code> object, and resets it during
  * Writable deserialization to clear any cached state.</p>
- *
+ * <p>Note: this class has a natural ordering that is inconsistent with equals.</p>
  * @see org.apache.hadoop.hbase.KeyValue
  */
 @ApiAudience.Framework
@@ -149,6 +149,9 @@ public final class HFileKeyValue implements WritableComparable<HFileKeyValue> {
   public int compareTo(HFileKeyValue other) {
     return KeyValue.COMPARATOR.compare(mKeyValue, other.mKeyValue);
   }
+
+  // TODO(KIJIMR-85): Add equals() and hashCode() here. Remove findBugs exclusion
+  // and javadoc warning.
 
   /** {@inheritDoc} */
   @Override
