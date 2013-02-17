@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.mapper;
+package org.kiji.mapreduce.bulkimport.impl;
 
 import java.io.IOException;
 

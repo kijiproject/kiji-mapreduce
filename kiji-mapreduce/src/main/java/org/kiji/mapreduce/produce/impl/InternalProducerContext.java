@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.context;
+package org.kiji.mapreduce.produce.impl;
 
 import java.io.IOException;
 

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.output;
+package org.kiji.mapreduce.output.framework;
 
 import static org.apache.hadoop.hbase.util.Bytes.toBytes;
 

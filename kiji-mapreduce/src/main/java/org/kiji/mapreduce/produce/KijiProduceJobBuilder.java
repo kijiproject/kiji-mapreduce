@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce;
+package org.kiji.mapreduce.produce;
 
 import java.io.IOException;
 import java.util.Map;

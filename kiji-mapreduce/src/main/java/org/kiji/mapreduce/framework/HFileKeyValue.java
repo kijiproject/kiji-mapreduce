@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce;
+package org.kiji.mapreduce.framework;
 
 import java.io.DataInput;
 import java.io.DataOutput;

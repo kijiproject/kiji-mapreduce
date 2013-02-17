@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.tools;
+package org.kiji.mapreduce.tools.framework;
 
 /** Configuration keys for Job input and output specifications. */
 public final class JobIOConfKeys {

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.tools;
+package org.kiji.mapreduce.tools.framework;
 
 import org.kiji.annotations.ApiAudience;
 

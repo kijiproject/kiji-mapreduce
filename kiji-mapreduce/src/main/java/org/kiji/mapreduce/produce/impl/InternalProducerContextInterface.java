@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce;
+package org.kiji.mapreduce.produce.impl;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.mapper;
+package org.kiji.mapreduce.impl;
 
 import static org.kiji.schema.util.ByteArrayFormatter.toHex;
 
