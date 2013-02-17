@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.tools;
+package org.kiji.mapreduce.tools.framework;
 
 import java.io.IOException;
 import java.util.Map;
@@ -31,7 +31,7 @@ import org.kiji.mapreduce.output.HFileMapReduceJobOutput;
 import org.kiji.mapreduce.output.MapFileMapReduceJobOutput;
 import org.kiji.mapreduce.output.SequenceFileMapReduceJobOutput;
 import org.kiji.mapreduce.output.TextMapReduceJobOutput;
-import org.kiji.mapreduce.tools.JobOutputSpec.Format;
+import org.kiji.mapreduce.tools.framework.JobOutputSpec.Format;
 import org.kiji.schema.tools.SpaceSeparatedMapParser;
 
 /**

@@ -27,9 +27,9 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.HFileKeyValue;
-import org.kiji.mapreduce.KijiConfKeys;
 import org.kiji.mapreduce.KijiTableContext;
+import org.kiji.mapreduce.framework.HFileKeyValue;
+import org.kiji.mapreduce.framework.KijiConfKeys;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.EntityIdFactory;
 import org.kiji.schema.Kiji;

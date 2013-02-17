@@ -21,6 +21,7 @@ package org.kiji.mapreduce.produce.impl;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
+import org.kiji.mapreduce.produce.ProducerContext;
 import org.kiji.schema.EntityId;
 
 /**

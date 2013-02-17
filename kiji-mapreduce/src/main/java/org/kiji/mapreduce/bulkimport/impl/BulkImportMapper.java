@@ -31,16 +31,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.AvroKeyReader;
-import org.kiji.mapreduce.AvroValueReader;
-import org.kiji.mapreduce.HFileKeyValue;
-import org.kiji.mapreduce.HTableReader;
-import org.kiji.mapreduce.JobHistoryCounters;
-import org.kiji.mapreduce.KijiBulkImporter;
 import org.kiji.mapreduce.KijiMapper;
 import org.kiji.mapreduce.KijiTableContext;
-import org.kiji.mapreduce.KijiTableContextFactory;
-import org.kiji.mapreduce.util.KijiBulkImporters;
+import org.kiji.mapreduce.avro.AvroKeyReader;
+import org.kiji.mapreduce.avro.AvroValueReader;
+import org.kiji.mapreduce.bulkimport.KijiBulkImporter;
+import org.kiji.mapreduce.bulkimport.impl.KijiBulkImporters;
+import org.kiji.mapreduce.framework.HFileKeyValue;
+import org.kiji.mapreduce.framework.JobHistoryCounters;
+import org.kiji.mapreduce.impl.HTableReader;
+import org.kiji.mapreduce.impl.KijiTableContextFactory;
 
 /**
  * Hadoop mapper that runs a KijiBulkImporter.

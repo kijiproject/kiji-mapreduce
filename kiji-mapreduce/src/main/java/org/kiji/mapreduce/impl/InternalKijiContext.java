@@ -44,7 +44,7 @@ public class InternalKijiContext implements KijiContext {
    *    {@link KijiContext}
    * @throws IOException on I/O error.
    */
-  InternalKijiContext(TaskInputOutputContext context) throws IOException {
+  protected InternalKijiContext(TaskInputOutputContext context) throws IOException {
     mHadoopContext = context;
     mKeyValueStoreFactory = KeyValueStoreReaderFactory.create(context.getConfiguration());
   }

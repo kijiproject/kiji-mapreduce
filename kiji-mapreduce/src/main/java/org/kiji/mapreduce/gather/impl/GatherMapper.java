@@ -29,13 +29,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.AvroKeyWriter;
-import org.kiji.mapreduce.AvroValueWriter;
-import org.kiji.mapreduce.GathererContext;
-import org.kiji.mapreduce.JobHistoryCounters;
-import org.kiji.mapreduce.KijiConfKeys;
-import org.kiji.mapreduce.KijiGatherer;
-import org.kiji.mapreduce.context.InternalGathererContext;
+import org.kiji.mapreduce.avro.AvroKeyWriter;
+import org.kiji.mapreduce.avro.AvroValueWriter;
+import org.kiji.mapreduce.framework.JobHistoryCounters;
+import org.kiji.mapreduce.framework.KijiConfKeys;
+import org.kiji.mapreduce.gather.GathererContext;
+import org.kiji.mapreduce.gather.KijiGatherer;
+import org.kiji.mapreduce.impl.KijiTableMapper;
 import org.kiji.schema.KijiDataRequest;
 import org.kiji.schema.KijiRowData;
 

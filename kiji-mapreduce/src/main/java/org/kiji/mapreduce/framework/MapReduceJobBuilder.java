@@ -46,6 +46,14 @@ import org.slf4j.LoggerFactory;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
+import org.kiji.mapreduce.DistributedCacheJars;
+import org.kiji.mapreduce.JobConfigurationException;
+import org.kiji.mapreduce.KijiMapper;
+import org.kiji.mapreduce.KijiReducer;
+import org.kiji.mapreduce.MapReduceJob;
+import org.kiji.mapreduce.MapReduceJobInput;
+import org.kiji.mapreduce.MapReduceJobOutput;
+import org.kiji.mapreduce.impl.HTableReader;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigSerializer;
 import org.kiji.mapreduce.kvstore.impl.KeyValueStoreConfigValidator;
@@ -78,7 +86,7 @@ public abstract class MapReduceJobBuilder<T extends MapReduceJobBuilder<T>> {
   private Map<String, KeyValueStore<?, ?>> mBoundStores;
 
   /** Creates a new <code>MapReduceJobBuilder</code> instance. */
-  MapReduceJobBuilder() {
+  protected MapReduceJobBuilder() {
     mJarDirectories = new ArrayList<File>();
     mBoundStores = new HashMap<String, KeyValueStore<?, ?>>();
 

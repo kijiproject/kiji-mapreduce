@@ -27,9 +27,9 @@ import org.apache.hadoop.hbase.mapreduce.GenericTableMapReduceUtil;
 import org.apache.hadoop.mapreduce.Job;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KijiConfKeys;
 import org.kiji.mapreduce.MapReduceJobOutput;
-import org.kiji.mapreduce.tools.JobIOConfKeys;
+import org.kiji.mapreduce.framework.KijiConfKeys;
+import org.kiji.mapreduce.tools.framework.JobIOConfKeys;
 import org.kiji.schema.KijiURI;
 
 /** MapReduce job output configuration that outputs to a Kiji table. */
@@ -43,7 +43,7 @@ public abstract class KijiTableMapReduceJobOutput extends MapReduceJobOutput {
   private int mNumReduceTasks;
 
   /** Default constructor. Do not use directly. */
-  KijiTableMapReduceJobOutput() {
+  protected KijiTableMapReduceJobOutput() {
   }
 
   /** {@inheritDoc} */

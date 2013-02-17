@@ -31,7 +31,7 @@ import org.kiji.mapreduce.input.KijiTableMapReduceJobInput;
 import org.kiji.mapreduce.input.SequenceFileMapReduceJobInput;
 import org.kiji.mapreduce.input.TextMapReduceJobInput;
 import org.kiji.mapreduce.input.WholeTextFileMapReduceJobInput;
-import org.kiji.mapreduce.tools.JobInputSpec.Format;
+import org.kiji.mapreduce.tools.framework.JobInputSpec.Format;
 import org.kiji.schema.tools.SpaceSeparatedMapParser;
 
 /**

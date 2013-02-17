@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
+import org.kiji.mapreduce.KijiContext;
 import org.kiji.schema.EntityId;
 
 /** Context for producers to output new cells in the currently processed row. */

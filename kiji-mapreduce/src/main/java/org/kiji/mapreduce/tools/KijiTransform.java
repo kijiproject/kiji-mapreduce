@@ -28,6 +28,10 @@ import org.kiji.common.flags.Flag;
 import org.kiji.mapreduce.KijiMapper;
 import org.kiji.mapreduce.KijiReducer;
 import org.kiji.mapreduce.KijiTransformJobBuilder;
+import org.kiji.mapreduce.tools.framework.JobIOSpecParseException;
+import org.kiji.mapreduce.tools.framework.JobTool;
+import org.kiji.mapreduce.tools.framework.MapReduceJobInputFactory;
+import org.kiji.mapreduce.tools.framework.MapReduceJobOutputFactory;
 import org.kiji.schema.tools.KijiToolLauncher;
 import org.kiji.schema.tools.RequiredFlagException;
 

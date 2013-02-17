@@ -27,6 +27,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import org.kiji.annotations.ApiAudience;
+import org.kiji.mapreduce.KijiTableContext;
+import org.kiji.mapreduce.framework.KijiConfKeys;
 
 /** Instantiates a KijiTableContext according to a configuration. */
 @ApiAudience.Private

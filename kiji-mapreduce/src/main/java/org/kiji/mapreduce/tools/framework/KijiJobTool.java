@@ -26,7 +26,7 @@ import com.google.common.base.Preconditions;
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
 import org.kiji.common.flags.Flag;
-import org.kiji.mapreduce.KijiTableInputJobBuilder;
+import org.kiji.mapreduce.framework.KijiTableInputJobBuilder;
 import org.kiji.mapreduce.input.KijiTableMapReduceJobInput;
 import org.kiji.schema.EntityIdFactory;
 import org.kiji.schema.Kiji;

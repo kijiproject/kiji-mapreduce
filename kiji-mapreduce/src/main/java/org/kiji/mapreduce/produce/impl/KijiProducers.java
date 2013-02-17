@@ -25,9 +25,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KijiConfKeys;
-import org.kiji.mapreduce.KijiProducer;
-import org.kiji.mapreduce.KijiProducerOutputException;
+import org.kiji.mapreduce.framework.KijiConfKeys;
+import org.kiji.mapreduce.produce.KijiProducer;
+import org.kiji.mapreduce.produce.KijiProducerOutputException;
 import org.kiji.schema.KijiColumnName;
 import org.kiji.schema.layout.KijiTableLayout;
 import org.kiji.schema.layout.KijiTableLayout.LocalityGroupLayout.FamilyLayout;

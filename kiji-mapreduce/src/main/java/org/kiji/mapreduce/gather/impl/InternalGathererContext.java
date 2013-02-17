@@ -24,7 +24,8 @@ import java.io.IOException;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.GathererContext;
+import org.kiji.mapreduce.gather.GathererContext;
+import org.kiji.mapreduce.impl.InternalKijiContext;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.KijiRowData;
 

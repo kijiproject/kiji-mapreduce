@@ -54,7 +54,7 @@ public abstract class KijiTableMapper<K, V>
   private Configuration mConf;
 
   /** Constructs a new mapper that reads from a Kiji table. */
-  KijiTableMapper() {
+  protected KijiTableMapper() {
   }
 
   /**

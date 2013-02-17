@@ -25,8 +25,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import org.kiji.annotations.ApiAudience;
-import org.kiji.mapreduce.KijiBulkImporter;
-import org.kiji.mapreduce.KijiConfKeys;
+import org.kiji.mapreduce.bulkimport.KijiBulkImporter;
+import org.kiji.mapreduce.framework.KijiConfKeys;
 
 /** Utility methods for working with <code>KijiBulkImporter</code>. */
 @ApiAudience.Private

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce;
+package org.kiji.mapreduce.framework;
 
 import java.io.IOException;
 
@@ -25,6 +25,8 @@ import org.apache.hadoop.mapreduce.Job;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
+import org.kiji.mapreduce.JobConfigurationException;
+import org.kiji.mapreduce.MapReduceJobInput;
 import org.kiji.mapreduce.input.KijiTableMapReduceJobInput;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.Kiji;
@@ -57,7 +59,7 @@ public abstract class KijiTableInputJobBuilder<T extends KijiTableInputJobBuilde
   private KijiRowFilter mRowFilter;
 
   /** Constructs a builder for jobs that use a Kiji table as input. */
-  KijiTableInputJobBuilder() {
+  protected KijiTableInputJobBuilder() {
     mInputTableURI = null;
     mStartRow = null;
     mLimitRow = null;

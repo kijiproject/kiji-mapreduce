@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.annotations.Inheritance;
+import org.kiji.mapreduce.KijiContext;
 
 /**
  * Context for gatherers. GathererContexts emit key/value pairs.

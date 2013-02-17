@@ -28,10 +28,10 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
-import org.kiji.mapreduce.KijiConfKeys;
 import org.kiji.mapreduce.KijiTableContext;
 import org.kiji.mapreduce.MapReduceJobOutput;
-import org.kiji.mapreduce.context.HFileWriterContext;
+import org.kiji.mapreduce.framework.KijiConfKeys;
+import org.kiji.mapreduce.impl.HFileWriterContext;
 
 /**
  * M/R job output configuration for a job intending to reduce into HFiles.
