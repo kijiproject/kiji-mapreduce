@@ -27,10 +27,10 @@ import org.apache.hadoop.io.NullWritable;
 
 import org.kiji.common.flags.Flag;
 import org.kiji.common.flags.FlagParser;
-import org.kiji.mapreduce.HFileKeyValue;
 import org.kiji.mapreduce.KijiMapper;
 import org.kiji.mapreduce.KijiTransformJobBuilder;
 import org.kiji.mapreduce.MapReduceJob;
+import org.kiji.mapreduce.framework.HFileKeyValue;
 import org.kiji.mapreduce.input.SequenceFileMapReduceJobInput;
 import org.kiji.mapreduce.output.HFileMapReduceJobOutput;
 import org.kiji.mapreduce.reducer.IdentityReducer;

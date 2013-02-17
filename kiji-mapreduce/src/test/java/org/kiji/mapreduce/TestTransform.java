@@ -34,7 +34,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.kiji.mapreduce.context.DirectKijiTableWriterContext;
+import org.kiji.mapreduce.framework.HFileKeyValue;
+import org.kiji.mapreduce.impl.DirectKijiTableWriterContext;
 import org.kiji.mapreduce.input.KijiTableMapReduceJobInput;
 import org.kiji.mapreduce.input.KijiTableMapReduceJobInput.RowOptions;
 import org.kiji.mapreduce.output.DirectKijiTableMapReduceJobOutput;

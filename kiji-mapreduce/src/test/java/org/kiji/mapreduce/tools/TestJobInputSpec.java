@@ -22,6 +22,8 @@ package org.kiji.mapreduce.tools;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import org.kiji.mapreduce.tools.framework.JobIOSpecParseException;
+import org.kiji.mapreduce.tools.framework.JobInputSpec;
 
 public class TestJobInputSpec {
   @Test

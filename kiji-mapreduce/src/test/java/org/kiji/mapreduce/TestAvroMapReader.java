@@ -37,6 +37,7 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.util.Utf8;
 import org.junit.Test;
+import org.kiji.mapreduce.avro.AvroMapReader;
 
 public class TestAvroMapReader {
   @Test
