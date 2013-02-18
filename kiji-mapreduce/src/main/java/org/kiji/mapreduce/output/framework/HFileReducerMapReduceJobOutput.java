@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.kiji.mapreduce.output;
+package org.kiji.mapreduce.output.framework;
 
 import java.io.IOException;
 import java.util.Map;
@@ -28,10 +28,12 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
+import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.KijiTableContext;
 import org.kiji.mapreduce.MapReduceJobOutput;
 import org.kiji.mapreduce.framework.KijiConfKeys;
 import org.kiji.mapreduce.impl.HFileWriterContext;
+import org.kiji.mapreduce.output.HFileMapReduceJobOutput;
 
 /**
  * M/R job output configuration for a job intending to reduce into HFiles.
@@ -40,6 +42,7 @@ import org.kiji.mapreduce.impl.HFileWriterContext;
  * Reducers can't write HFiles directly, but must write SequenceFiles that will be post-processed
  * (sorted) by an identity Map/Reduce in order to finally write HFiles.
  */
+@ApiAudience.Framework
 public class HFileReducerMapReduceJobOutput extends MapReduceJobOutput {
   private final HFileMapReduceJobOutput mJobOutput;
 

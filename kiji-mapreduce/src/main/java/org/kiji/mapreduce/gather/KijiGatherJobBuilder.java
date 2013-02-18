@@ -45,7 +45,7 @@ import org.kiji.mapreduce.gather.impl.GatherMapper;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreClient;
 import org.kiji.mapreduce.output.HFileMapReduceJobOutput;
-import org.kiji.mapreduce.output.HFileReducerMapReduceJobOutput;
+import org.kiji.mapreduce.output.framework.HFileReducerMapReduceJobOutput;
 import org.kiji.mapreduce.reducer.IdentityReducer;
 import org.kiji.schema.KijiDataRequest;
 

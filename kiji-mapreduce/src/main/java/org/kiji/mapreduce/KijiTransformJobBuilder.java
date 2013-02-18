@@ -34,7 +34,7 @@ import org.kiji.mapreduce.framework.MapReduceJobBuilder;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreClient;
 
-/** Builds a job that runs a MapReduce in Hadoop. */
+/** Builds a general MapReduce job around Kiji mappers and reducers. */
 @ApiAudience.Public
 public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTransformJobBuilder> {
   private static final Logger LOG = LoggerFactory.getLogger(KijiTransformJobBuilder.class);
