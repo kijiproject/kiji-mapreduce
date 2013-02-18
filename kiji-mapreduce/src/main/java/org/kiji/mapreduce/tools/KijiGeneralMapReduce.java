@@ -25,9 +25,9 @@ import org.apache.hadoop.conf.Configuration;
 
 import org.kiji.annotations.ApiAudience;
 import org.kiji.common.flags.Flag;
+import org.kiji.mapreduce.KijiMapReduceJobBuilder;
 import org.kiji.mapreduce.KijiMapper;
 import org.kiji.mapreduce.KijiReducer;
-import org.kiji.mapreduce.KijiTransformJobBuilder;
 import org.kiji.mapreduce.tools.framework.JobIOSpecParseException;
 import org.kiji.mapreduce.tools.framework.JobTool;
 import org.kiji.mapreduce.tools.framework.MapReduceJobInputFactory;
@@ -35,28 +35,28 @@ import org.kiji.mapreduce.tools.framework.MapReduceJobOutputFactory;
 import org.kiji.schema.tools.KijiToolLauncher;
 import org.kiji.schema.tools.RequiredFlagException;
 
-/** Transforms data using a Kiji MapReduce job. */
+/** Launch an arbitrary KijiMapReduceJob. */
 @ApiAudience.Private
-public final class KijiTransform extends JobTool<KijiTransformJobBuilder> {
-  @Flag(name="mapper", usage="Fully-qualified class name of the mapper to run")
+public final class KijiGeneralMapReduce extends JobTool<KijiMapReduceJobBuilder> {
+  @Flag(name="mapper", usage="Fully-qualified class name of the kiji mapper to run")
   private String mMapperName = "";
 
   @Flag(name="combiner", usage="Fully-qualifier class name of the combiner to use (optional)")
   private String mCombinerName = "";
 
-  @Flag(name="reducer", usage="Fully-qualified class name of the reducer to run")
+  @Flag(name="reducer", usage="Fully-qualified class name of the kiji reducer to run")
   private String mReducerName = "";
 
   /** {@inheritDoc} */
   @Override
   public String getName() {
-    return "transform";
+    return "mapreduce";
   }
 
   /** {@inheritDoc} */
   @Override
   public String getDescription() {
-    return "Transform data using MapReduce";
+    return "Run a mapreduce job with KijiMapper and KijiReducers";
   }
 
   /** {@inheritDoc} */
@@ -74,12 +74,12 @@ public final class KijiTransform extends JobTool<KijiTransformJobBuilder> {
   }
 
   @Override
-  protected KijiTransformJobBuilder createJobBuilder() {
-    return KijiTransformJobBuilder.create();
+  protected KijiMapReduceJobBuilder createJobBuilder() {
+    return KijiMapReduceJobBuilder.create();
   }
 
   @Override
-  protected void configure(KijiTransformJobBuilder jobBuilder)
+  protected void configure(KijiMapReduceJobBuilder jobBuilder)
       throws ClassNotFoundException, IOException, JobIOSpecParseException {
     // Configure lib jars and KV stores:
     super.configure(jobBuilder);
@@ -105,6 +105,6 @@ public final class KijiTransform extends JobTool<KijiTransformJobBuilder> {
    * @throws Exception If there is an error.
    */
   public static void main(String[] args) throws Exception {
-    System.exit(new KijiToolLauncher().run(new KijiTransform(), args));
+    System.exit(new KijiToolLauncher().run(new KijiGeneralMapReduce(), args));
   }
 }

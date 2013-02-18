@@ -34,10 +34,13 @@ import org.kiji.mapreduce.framework.MapReduceJobBuilder;
 import org.kiji.mapreduce.kvstore.KeyValueStore;
 import org.kiji.mapreduce.kvstore.KeyValueStoreClient;
 
-/** Builds a general MapReduce job around Kiji mappers and reducers. */
+/**
+ * Builds general MapReduce jobs around Kiji mappers and reducers. For specialized tasks see,
+ * for example, {@link org.kiji.mapreduce.produce.KijiProduceJobBuilder}.
+ */
 @ApiAudience.Public
-public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTransformJobBuilder> {
-  private static final Logger LOG = LoggerFactory.getLogger(KijiTransformJobBuilder.class);
+public final class KijiMapReduceJobBuilder extends MapReduceJobBuilder<KijiMapReduceJobBuilder> {
+  private static final Logger LOG = LoggerFactory.getLogger(KijiMapReduceJobBuilder.class);
 
   /** The class of the mapper to run. */
   @SuppressWarnings("rawtypes")
@@ -60,7 +63,7 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
   private MapReduceJobInput mJobInput;
 
   /** Constructs a builder for jobs that run a MapReduce job to transform data. */
-  private KijiTransformJobBuilder() {
+  private KijiMapReduceJobBuilder() {
     mMapperClass = null;
     mCombinerClass = null;
     mReducerClass = null;
@@ -77,8 +80,8 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
    *
    * @return a new Kiji transform job builder.
    */
-  public static KijiTransformJobBuilder create() {
-    return new KijiTransformJobBuilder();
+  public static KijiMapReduceJobBuilder create() {
+    return new KijiMapReduceJobBuilder();
   }
 
   /**
@@ -87,7 +90,7 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
    * @param jobInput The input for the job.
    * @return This builder instance so you may chain configuration method calls.
    */
-  public KijiTransformJobBuilder withInput(MapReduceJobInput jobInput) {
+  public KijiMapReduceJobBuilder withInput(MapReduceJobInput jobInput) {
     mJobInput = jobInput;
     return this;
   }
@@ -99,7 +102,7 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
    * @return This builder instance so you may chain configuration method calls.
    */
   @SuppressWarnings("rawtypes")
-  public KijiTransformJobBuilder withMapper(Class<? extends KijiMapper> mapperClass) {
+  public KijiMapReduceJobBuilder withMapper(Class<? extends KijiMapper> mapperClass) {
     mMapperClass = mapperClass;
     return this;
   }
@@ -111,7 +114,7 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
    * @return This builder instance so you may chain configuration method calls.
    */
   @SuppressWarnings("rawtypes")
-  public KijiTransformJobBuilder withCombiner(Class<? extends KijiReducer> combinerClass) {
+  public KijiMapReduceJobBuilder withCombiner(Class<? extends KijiReducer> combinerClass) {
     mCombinerClass = combinerClass;
     return this;
   }
@@ -123,7 +126,7 @@ public final class KijiTransformJobBuilder extends MapReduceJobBuilder<KijiTrans
    * @return This builder instance so you may chain configuration method calls.
    */
   @SuppressWarnings("rawtypes")
-  public KijiTransformJobBuilder withReducer(Class<? extends KijiReducer> reducerClass) {
+  public KijiMapReduceJobBuilder withReducer(Class<? extends KijiReducer> reducerClass) {
     mReducerClass = reducerClass;
     return this;
   }

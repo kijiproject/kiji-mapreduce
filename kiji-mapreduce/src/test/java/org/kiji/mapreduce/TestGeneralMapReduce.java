@@ -50,8 +50,8 @@ import org.kiji.schema.layout.KijiTableLayout;
 import org.kiji.schema.util.InstanceBuilder;
 
 /** Runs a map-only job in-process against a fake HBase instance. */
-public class TestTransform {
-  private static final Logger LOG = LoggerFactory.getLogger(TestTransform.class);
+public class TestGeneralMapReduce {
+  private static final Logger LOG = LoggerFactory.getLogger(TestGeneralMapReduce.class);
 
   /**
    * Example mapper intended to run on the generic KijiMR test layout. This test uses the resource
@@ -150,7 +150,7 @@ public class TestTransform {
     jobConf.set("fs.default.FS", tmpDir);
 
     // Run the transform (map-only job):
-    final MapReduceJob job = KijiTransformJobBuilder.create()
+    final MapReduceJob job = KijiMapReduceJobBuilder.create()
         .withConf(jobConf)
         .withMapper(ExampleMapper.class)
         .withInput(new KijiTableMapReduceJobInput(

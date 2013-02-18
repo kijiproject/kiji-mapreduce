@@ -53,8 +53,8 @@ import org.kiji.mapreduce.output.TextMapReduceJobOutput;
 import org.kiji.schema.util.Resources;
 import org.kiji.schema.util.TestFileUtils;
 
-public class TestKijiTransformJobBuilder {
-  private static final Logger LOG = LoggerFactory.getLogger(TestKijiTransformJobBuilder.class);
+public class TestKijiMapReduceJobBuilder {
+  private static final Logger LOG = LoggerFactory.getLogger(TestKijiMapReduceJobBuilder.class);
 
   /** A line count mapper for testing. */
   public static class MyMapper extends KijiMapper<LongWritable, Text, Text, IntWritable>
@@ -130,7 +130,7 @@ public class TestKijiTransformJobBuilder {
 
   @Test
   public void testBuild() throws Exception {
-    final MapReduceJob job = KijiTransformJobBuilder.create()
+    final MapReduceJob job = KijiMapReduceJobBuilder.create()
         .withConf(mConf)
         .withInput(new TextMapReduceJobInput(new Path("/path/to/my/input")))
         .withMapper(MyMapper.class)
@@ -178,7 +178,7 @@ public class TestKijiTransformJobBuilder {
     }
 
     LOG.info("Building job...");
-    final MapReduceJob job = KijiTransformJobBuilder.create()
+    final MapReduceJob job = KijiMapReduceJobBuilder.create()
         .withConf(mConf)
         .withInput(new TextMapReduceJobInput(new Path("/path/to/my/input")))
         .withMapper(MyMapper.class)
