@@ -43,12 +43,7 @@ import org.kiji.annotations.ApiAudience;
  *     final MapReduceJobInput textJobInput = new TextMapReduceJobInput(inputFile);
  *   </code>
  * </pre>
- *
- * @see KijiMapReduceJobBuilder for more information about running a MapReduce job.
- * @see KijiTableMapReduceJobOutput for more information about configuring a MapReduce
- *     job to output to a Kiji table.
- * @see WholeTextFileMapReduceJobInput to use inputs that cause each MapReduce split to
- *     read from an entire file instead of a block.
+ * @see WholeTextFileMapReduceJobInput
  */
 @ApiAudience.Public
 public final class TextMapReduceJobInput extends FileMapReduceJobInput {

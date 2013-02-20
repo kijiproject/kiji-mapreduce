@@ -46,10 +46,6 @@ import org.kiji.mapreduce.tools.framework.JobIOConfKeys;
  *     final MapReduceJobInput htableJobInput = new HTableMapReduceJobInput("mytable");
  *   </code>
  * </pre>
- *
- * @see KijiMapReduceJobBuilder for more information about running a MapReduce job.
- * @see KijiTableMapReduceJobOutput for more information about configuring a MapReduce
- *     job to output to a Kiji table.
  */
 @ApiAudience.Public
 public final class HTableMapReduceJobInput extends MapReduceJobInput {
