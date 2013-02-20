@@ -26,14 +26,42 @@ import org.kiji.annotations.ApiAudience;
 import org.kiji.mapreduce.input.impl.WholeFileInputFormat;
 
 /**
- * A job input for reading entire text files as the records to a map task.
- * A single map task will process each file under a specified Path.
+ * The class WholeTextFileMapReduceJobInput is used to indicate the usage of entire text
+ * files as input to a MapReduce job. Any MapReduce job configured to read whole files from
+ * HDFS should expect to receive <code>Text</code> as a key (path to the file) and
+ * <code>Text</code> as a value (contents of the file).
+ *
+ * <h2>Configuring an input:</h2>
+ * <p>
+ *   WholeTextFileMapReduceJobInput must be configured with paths of the files to read:
+ * </p>
+ * <pre>
+ *   <code>
+ *     // Get paths of input files in a directory on HDFS.
+ *     final FileSystem fs = FileSystem.get(myConf);
+ *     final FileStatus[] statuses = fs.listStatus(fs);
+ *     final List<Path> paths = new ArrayList<Path>();
+ *     for (FileStatus status : statuses) {
+ *       paths.add(status.getPath());
+ *     }
+ *
+ *     // Configure the job input.
+ *     final MapReduceJobInput wholeFileJobInput =
+ *         new WholeTextFileMapReduceJobInput(paths.toArray());
+ *   </code>
+ * </pre>
+ *
+ * @see KijiMapReduceJobBuilder for more information about running a MapReduce job.
+ * @see KijiTableMapReduceJobOutput for more information about configuring a MapReduce
+ *     job to output to a Kiji table.
+ * @see TextMapReduceJobInput to use inputs that read lines from text files on HDFS
+ *     instead of the entire file.
  */
 @ApiAudience.Public
 public final class WholeTextFileMapReduceJobInput extends FileMapReduceJobInput {
 
   /**
-   * Creates a new <code>WholeTextFileMapReduceJobInput</code> instance.
+   * Constructs job input from a list of paths to text files.
    *
    * @param paths The paths to the job input files.
    */
