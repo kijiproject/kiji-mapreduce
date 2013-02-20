@@ -140,7 +140,7 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
     // Configure the total order partitioner so generated HFile shards are contiguous and sorted.
     configurePartitioner(job, makeTableKeySplit(getOutputTableURI(), getNumReduceTasks()));
 
-    // Note: the HFile job output requires the reducer of the map/reduce to be IdentityReducer.
+    // Note: the HFile job output requires the reducer of the MapReduce job to be IdentityReducer.
     //     This is enforced externally.
   }
 
