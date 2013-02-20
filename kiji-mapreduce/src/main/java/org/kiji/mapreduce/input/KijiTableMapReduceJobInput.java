@@ -41,16 +41,15 @@ import org.kiji.schema.filter.KijiRowFilter;
 /**
  * The class KijiTableMapReduceJobInput is used indicate the usage of a KijiTable
  * as input to a MapReduce job. Any MapReduce job configured to read from a KijiTable
- * should expect to receive an {@link EntityId} as a key and a {@link KijiRowData} as
- * a value.
+ * should expect to receive an {@link EntityId} as a key and a {@link org.kiji.schema.KijiRowData} 
+ * as a value.
  *
  * <h2>Configuring an input:</h2>
  * <p>
  *   KijiTableMapReduceJobInput must be configured with a {@link KijiDataRequest}
  *   specifying the columns to read during the MapReduce job. KijiTableMapReduceJobInput
  *   can also be configured with optional row bounds that will limit section of rows
- *   that the job will use. Use {@link RowOptions(EntityId, EntityId, KijiRowFilter)}
- *   to specify these options:
+ *   that the job will use. Use a {@link RowOptions RowOptions} to specify these options:
  * </p>
  * <pre>
  *   <code>

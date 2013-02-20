@@ -109,7 +109,7 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
    * splits is only possible when targeting a Kiji table with &lt;hashRowKeys&gt;
    * enabled.  Typically, you should allow the system to
    * match the number of splits to the number of regions in the table by using the {@link
-   * #HFileMapReduceJobOutput(KijiTable, Path)} constructor instead.
+   * #HFileMapReduceJobOutput(KijiURI, Path)} constructor instead.
    *
    * @param table The kiji table the resulting HFiles are intended for.
    * @param path The directory path to output the HFiles to.
