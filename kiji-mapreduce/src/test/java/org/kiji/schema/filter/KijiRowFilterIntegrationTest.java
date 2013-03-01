@@ -70,9 +70,9 @@ public abstract class KijiRowFilterIntegrationTest extends AbstractKijiIntegrati
 
   @After
   public void teardown() throws Exception {
-    ResourceUtils.releaseOrLog(mFoodsTable);
+    ResourceUtils.releaseIfNotNull(mFoodsTable);
     deleteTable();
-    ResourceUtils.releaseOrLog(mKiji);
+    ResourceUtils.releaseIfNotNull(mKiji);
   }
 
   /**

@@ -137,8 +137,8 @@ public final class HFileWriterContext
 
   @Override
   public void close() throws IOException {
-    ResourceUtils.releaseOrLog(mTable);
-    ResourceUtils.releaseOrLog(mKiji);
+    ResourceUtils.releaseIfNotNull(mTable);
+    ResourceUtils.releaseIfNotNull(mKiji);
     super.close();
   }
 }

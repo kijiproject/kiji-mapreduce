@@ -145,10 +145,10 @@ public abstract class KijiTableInputJobBuilder<T extends KijiTableInputJobBuilde
       try {
         validateInputTable(table);
       } finally {
-        ResourceUtils.releaseOrLog(table);
+        ResourceUtils.releaseIfNotNull(table);
       }
     } finally {
-      ResourceUtils.releaseOrLog(kiji);
+      ResourceUtils.releaseIfNotNull(kiji);
     }
   }
 

@@ -82,8 +82,8 @@ public class TestBulkImporter extends KijiClientTest {
 
   @After
   public final void teardownTestBulkImporter() throws Exception {
-    ResourceUtils.closeOrLog(mReader);
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.closeIfNotNull(mReader);
+    ResourceUtils.releaseIfNotNull(mTable);
   }
 
   /**

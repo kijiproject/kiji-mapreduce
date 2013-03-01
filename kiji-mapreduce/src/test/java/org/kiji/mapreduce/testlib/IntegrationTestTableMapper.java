@@ -144,9 +144,9 @@ public class IntegrationTestTableMapper extends AbstractKijiIntegrationTest {
 
   @After
   public final void teardownIntegrationTestTableMapper() throws Exception {
-    ResourceUtils.releaseOrLog(mInputTable);
-    ResourceUtils.releaseOrLog(mOutputTable);
-    ResourceUtils.releaseOrLog(mKiji);
+    ResourceUtils.releaseIfNotNull(mInputTable);
+    ResourceUtils.releaseIfNotNull(mOutputTable);
+    ResourceUtils.releaseIfNotNull(mKiji);
 
     mInputTable = null;
     mOutputTable = null;

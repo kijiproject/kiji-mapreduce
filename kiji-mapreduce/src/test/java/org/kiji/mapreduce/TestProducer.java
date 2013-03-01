@@ -90,8 +90,8 @@ public class TestProducer extends KijiClientTest {
 
   @After
   public final void teardownTestProducer() throws Exception {
-    ResourceUtils.closeOrLog(mReader);
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.closeIfNotNull(mReader);
+    ResourceUtils.releaseIfNotNull(mTable);
   }
 
   /**

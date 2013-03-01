@@ -136,9 +136,9 @@ public class TestLaunchMapReduce {
 
   @After
   public void tearDown() throws Exception {
-    ResourceUtils.closeOrLog(mReader);
-    ResourceUtils.releaseOrLog(mTable);
-    ResourceUtils.releaseOrLog(mKiji);
+    ResourceUtils.closeIfNotNull(mReader);
+    ResourceUtils.releaseIfNotNull(mTable);
+    ResourceUtils.releaseIfNotNull(mKiji);
   }
 
   @Test

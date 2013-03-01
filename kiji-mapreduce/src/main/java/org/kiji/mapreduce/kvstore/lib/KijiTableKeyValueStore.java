@@ -251,7 +251,7 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
      * @param <V> The value type for the KeyValueStore.
      * @return the initialized KeyValueStore.
      */
-    public <V> KijiTableKeyValueStore<V> build() {
+    public <V> KijiTableKeyValueStore<V> build() throws IOException {
       checkTableUri(mTableUri);
       if (null == mColumn || !mColumn.isFullyQualified()) {
         throw new IllegalArgumentException("Must specify a fully-qualified column");
@@ -270,8 +270,8 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
       } catch (IOException ioe) {
         throw new IllegalArgumentException("Could not open table: " + mTableUri, ioe);
       } finally {
-        ResourceUtils.releaseOrLog(kijiTable);
-        ResourceUtils.releaseOrLog(kiji);
+        ResourceUtils.releaseIfNotNull(kijiTable);
+        ResourceUtils.releaseIfNotNull(kiji);
       }
 
       return new KijiTableKeyValueStore<V>(this);
@@ -561,9 +561,9 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
     @Override
     public void close() throws IOException {
       try {
-        ResourceUtils.closeOrLog(mTableReader);
-        ResourceUtils.releaseOrLog(mKijiTable);
-        ResourceUtils.releaseOrLog(mKiji);
+        ResourceUtils.closeIfNotNull(mTableReader);
+        ResourceUtils.releaseIfNotNull(mKijiTable);
+        ResourceUtils.releaseIfNotNull(mKiji);
       } finally {
         mTableReader = null;
         mKijiTable = null;

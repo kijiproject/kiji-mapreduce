@@ -215,10 +215,10 @@ public final class HFileMapReduceJobOutput extends KijiTableMapReduceJobOutput {
           return generateEvenStartKeys(nsplits);
         }
       } finally {
-        ResourceUtils.releaseOrLog(table);
+        ResourceUtils.releaseIfNotNull(table);
       }
     } finally {
-      ResourceUtils.releaseOrLog(kiji);
+      ResourceUtils.releaseIfNotNull(kiji);
     }
   }
 

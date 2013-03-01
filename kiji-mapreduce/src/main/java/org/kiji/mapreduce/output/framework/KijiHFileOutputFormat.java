@@ -258,7 +258,7 @@ public final class KijiHFileOutputFormat
         hfileWriter.appendFileInfo(StoreFile.BULKLOAD_TASK_KEY, toBytes(taskAttemptID));
         hfileWriter.appendFileInfo(StoreFile.MAJOR_COMPACTION_KEY, toBytes(true));
 
-        ResourceUtils.closeOrLog(hfileWriter);
+        ResourceUtils.closeIfNotNull(hfileWriter);
       }
     }
 
@@ -308,8 +308,8 @@ public final class KijiHFileOutputFormat
       final Kiji kiji = Kiji.Factory.open(mTableURI);
       final KijiTable table = kiji.openTable(mTableURI.getTable());
       mLayout = table.getLayout();
-      ResourceUtils.releaseOrLog(table);
-      ResourceUtils.releaseOrLog(kiji);
+      ResourceUtils.releaseIfNotNull(table);
+      ResourceUtils.releaseIfNotNull(kiji);
     }
 
     /** {@inheritDoc} */

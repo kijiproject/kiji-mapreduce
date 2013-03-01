@@ -115,7 +115,7 @@ public class TestGatherer extends KijiClientTest {
 
   @After
   public final void teardownTestGatherer() throws Exception {
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.releaseIfNotNull(mTable);
   }
 
   @Test

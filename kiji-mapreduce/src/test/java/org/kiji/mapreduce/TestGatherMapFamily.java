@@ -118,7 +118,7 @@ public class TestGatherMapFamily extends KijiClientTest {
 
   @After
   public void teardownTestGatherMapFamily() throws Exception {
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.releaseIfNotNull(mTable);
     mTable = null;
   }
 

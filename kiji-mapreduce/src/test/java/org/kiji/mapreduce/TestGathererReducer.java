@@ -140,7 +140,7 @@ public class TestGathererReducer extends KijiClientTest {
 
   @After
   public final void teardownTestGathererReducer() throws Exception {
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.releaseIfNotNull(mTable);
     mTable = null;
   }
 

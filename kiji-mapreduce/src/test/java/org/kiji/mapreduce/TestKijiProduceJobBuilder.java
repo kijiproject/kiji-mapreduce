@@ -103,7 +103,7 @@ public class TestKijiProduceJobBuilder extends KijiClientTest {
 
   @After
   public void teardownTestKijiProducer() throws Exception {
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.releaseIfNotNull(mTable);
     mTable = null;
   }
 
@@ -182,7 +182,7 @@ public class TestKijiProduceJobBuilder extends KijiClientTest {
           .withOutput(new DirectKijiTableMapReduceJobOutput(otherTable.getURI()))
           .build();
     } finally {
-      ResourceUtils.releaseOrLog(otherTable);
+      ResourceUtils.releaseIfNotNull(otherTable);
     }
   }
 }

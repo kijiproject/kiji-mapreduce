@@ -107,10 +107,10 @@ public final class KijiBulkLoad extends BaseTool {
         hFileLoader.load(mHFile, table);
         return SUCCESS;
       } finally {
-        ResourceUtils.releaseOrLog(table);
+        ResourceUtils.releaseIfNotNull(table);
       }
     } finally {
-      ResourceUtils.releaseOrLog(kiji);
+      ResourceUtils.releaseIfNotNull(kiji);
     }
   }
 
