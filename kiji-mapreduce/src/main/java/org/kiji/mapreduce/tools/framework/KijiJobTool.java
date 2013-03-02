@@ -106,10 +106,10 @@ public abstract class KijiJobTool<B extends KijiTableInputJobBuilder> extends Jo
           jobBuilder.withLimitRow(eidFactory.getEntityIdFromHBaseRowKey(mHBaseLimitRow));
         }
       } finally {
-        ResourceUtils.releaseOrLog(table);
+        ResourceUtils.releaseIfNotNull(table);
       }
     } finally {
-      ResourceUtils.releaseOrLog(kiji);
+      ResourceUtils.releaseIfNotNull(kiji);
     }
   }
 

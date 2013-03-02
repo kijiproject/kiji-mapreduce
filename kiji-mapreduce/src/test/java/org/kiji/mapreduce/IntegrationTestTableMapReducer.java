@@ -76,11 +76,11 @@ public class IntegrationTestTableMapReducer extends AbstractKijiIntegrationTest 
         }
 
       } finally {
-        ResourceUtils.releaseOrLog(table);
+        ResourceUtils.releaseIfNotNull(table);
       }
 
     } finally {
-      ResourceUtils.releaseOrLog(kiji);
+      ResourceUtils.releaseIfNotNull(kiji);
     }
   }
 

@@ -173,9 +173,9 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
     assertEquals("Couldn't retrieve configuration field from deserialized configuration.",
         "squirrel", config.get("conf.test.animal.string"));
 
-    ResourceUtils.releaseOrLog(fooTable);
-    ResourceUtils.closeOrLog(jobHistory);
-    ResourceUtils.releaseOrLog(kiji);
+    ResourceUtils.releaseIfNotNull(fooTable);
+    ResourceUtils.closeIfNotNull(jobHistory);
+    ResourceUtils.releaseIfNotNull(kiji);
   }
 
   /**
@@ -216,9 +216,9 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
     assertTrue(jobRecord.<Long>getMostRecentValue("info", "startTime")
         < jobRecord.<Long>getMostRecentValue("info", "endTime"));
 
-    ResourceUtils.releaseOrLog(fooTable);
-    ResourceUtils.closeOrLog(jobHistory);
-    ResourceUtils.releaseOrLog(kiji);
+    ResourceUtils.releaseIfNotNull(fooTable);
+    ResourceUtils.closeIfNotNull(jobHistory);
+    ResourceUtils.releaseIfNotNull(kiji);
   }
 
   /**
@@ -239,7 +239,7 @@ public class IntegrationTestJobHistoryKijiTable extends AbstractKijiIntegrationT
     final MapReduceJob mrJob = builder.build();
     assertTrue(mrJob.run());
 
-    ResourceUtils.releaseOrLog(fooTable);
-    ResourceUtils.releaseOrLog(kiji);
+    ResourceUtils.releaseIfNotNull(fooTable);
+    ResourceUtils.releaseIfNotNull(kiji);
   }
 }

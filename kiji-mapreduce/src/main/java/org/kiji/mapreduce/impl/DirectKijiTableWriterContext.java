@@ -116,9 +116,9 @@ public final class DirectKijiTableWriterContext
   /** {@inheritDoc} */
   @Override
   public void close() throws IOException {
-    ResourceUtils.closeOrLog(mPutter);
-    ResourceUtils.releaseOrLog(mTable);
-    ResourceUtils.releaseOrLog(mKiji);
+    ResourceUtils.closeIfNotNull(mPutter);
+    ResourceUtils.releaseIfNotNull(mTable);
+    ResourceUtils.releaseIfNotNull(mKiji);
     super.close();
   }
 }

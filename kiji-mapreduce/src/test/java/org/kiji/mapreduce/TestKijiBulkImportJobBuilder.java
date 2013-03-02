@@ -97,7 +97,7 @@ public class TestKijiBulkImportJobBuilder extends KijiClientTest {
   @After
   public void tearDown() throws Exception {
     FileUtils.deleteDirectory(mTempDir);
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.releaseIfNotNull(mTable);
     mTempDir = null;
     mTempPath = null;
     mTable = null;

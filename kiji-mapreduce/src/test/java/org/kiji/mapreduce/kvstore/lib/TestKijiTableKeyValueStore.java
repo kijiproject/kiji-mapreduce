@@ -112,7 +112,7 @@ public class TestKijiTableKeyValueStore extends KijiClientTest {
   }
 
   @Test(expected=IllegalArgumentException.class)
-  public void testRequiresTableUri() {
+  public void testRequiresTableUri() throws IOException {
     // Test that we need to set the table URI, or it will fail to verify as input.
     KijiTableKeyValueStore<String> input = KijiTableKeyValueStore.builder()
         .withColumn("some", "column")

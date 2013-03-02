@@ -139,8 +139,8 @@ public class IntegrationTestSimpleBulkImporter extends AbstractKijiIntegrationTe
 
   @After
   public void tearDown() throws Exception {
-    ResourceUtils.releaseOrLog(mOutputTable);
-    ResourceUtils.releaseOrLog(mKiji);
+    ResourceUtils.releaseIfNotNull(mOutputTable);
+    ResourceUtils.releaseIfNotNull(mKiji);
     mFS.delete(mBulkImportInputPath, false);
 
     mOutputTable = null;

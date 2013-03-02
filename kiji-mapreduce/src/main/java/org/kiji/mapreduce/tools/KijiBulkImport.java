@@ -117,8 +117,8 @@ public final class KijiBulkImport extends JobTool<KijiBulkImportJobBuilder> {
   /** {@inheritDoc} */
   @Override
   protected void cleanup() throws IOException {
-    ResourceUtils.releaseOrLog(mTable);
-    ResourceUtils.releaseOrLog(mKiji);
+    ResourceUtils.releaseIfNotNull(mTable);
+    ResourceUtils.releaseIfNotNull(mKiji);
     super.cleanup();
   }
 

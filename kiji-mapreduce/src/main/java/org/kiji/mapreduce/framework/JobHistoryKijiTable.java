@@ -102,7 +102,7 @@ public final class JobHistoryKijiTable implements Closeable {
       job.getConfiguration().writeXml(baos);
       writer.put(jobEntity, "info", "configuration", startTime, baos.toString("UTF-8"));
     } finally {
-      ResourceUtils.closeOrLog(writer);
+      ResourceUtils.closeIfNotNull(writer);
     }
   }
 
@@ -133,12 +133,12 @@ public final class JobHistoryKijiTable implements Closeable {
     try {
       return wtr.get(mKijiTable.getEntityId(jobId), wdr);
     } finally {
-      ResourceUtils.closeOrLog(wtr);
+      ResourceUtils.closeIfNotNull(wtr);
     }
   }
 
   @Override
   public void close() throws IOException {
-    ResourceUtils.releaseOrLog(mKijiTable);
+    ResourceUtils.releaseIfNotNull(mKijiTable);
   }
 }

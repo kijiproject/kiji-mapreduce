@@ -106,10 +106,10 @@ public final class KijiTableInputFormat
         return splits;
 
       } finally {
-        ResourceUtils.releaseOrLog(table);
+        ResourceUtils.releaseIfNotNull(table);
       }
     } finally {
-      ResourceUtils.releaseOrLog(kiji);
+      ResourceUtils.releaseIfNotNull(kiji);
     }
   }
 
@@ -231,10 +231,10 @@ public final class KijiTableInputFormat
     /** {@inheritDoc} */
     @Override
     public void close() throws IOException {
-      ResourceUtils.closeOrLog(mScanner);
-      ResourceUtils.closeOrLog(mReader);
-      ResourceUtils.releaseOrLog(mTable);
-      ResourceUtils.releaseOrLog(mKiji);
+      ResourceUtils.closeIfNotNull(mScanner);
+      ResourceUtils.closeIfNotNull(mReader);
+      ResourceUtils.releaseIfNotNull(mTable);
+      ResourceUtils.releaseIfNotNull(mKiji);
 
       mIterator = null;
       mScanner = null;

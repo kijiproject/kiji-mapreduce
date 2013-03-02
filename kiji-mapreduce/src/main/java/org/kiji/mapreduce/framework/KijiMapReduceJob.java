@@ -97,7 +97,7 @@ public final class KijiMapReduceJob extends MapReduceJob {
         throw ktnfe;
       }
     } finally {
-      ResourceUtils.closeOrLog(jobHistory);
+      ResourceUtils.closeIfNotNull(jobHistory);
     }
   }
 

@@ -78,7 +78,7 @@ public class TestRegexQualifierColumnFilter extends KijiClientTest {
 
   @After
   public final void teardownTestRegexQualifierColumnFilter() throws Exception {
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.releaseIfNotNull(mTable);
   }
 
   /**

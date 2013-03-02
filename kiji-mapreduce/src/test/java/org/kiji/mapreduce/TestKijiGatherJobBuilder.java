@@ -205,7 +205,7 @@ public class TestKijiGatherJobBuilder extends KijiClientTest {
 
   @After
   public void tearDown() throws Exception {
-    ResourceUtils.releaseOrLog(mTable);
+    ResourceUtils.releaseIfNotNull(mTable);
     mTable = null;
   }
 
