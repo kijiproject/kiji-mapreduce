@@ -535,19 +535,6 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
       }
     }
 
-    /**
-     * @param key the non-null key that defines an entity in the KeyValueStore to
-     *     retrieve.
-     * @return the value associated with 'key', or null if no such value is available.
-     * @throws IOException if there is an IO error communicating with the underlying
-     *     storage medium for the KeyValueStore.
-     * @deprecated Use {@link #get(EntityId)}
-     */
-    @Deprecated
-    public V get(String key) throws IOException {
-      return get(mKijiTable.getEntityId(key));
-    }
-
     /** {@inheritDoc} */
     @Override
     public boolean containsKey(EntityId entityId) throws IOException {
@@ -566,18 +553,6 @@ public final class KijiTableKeyValueStore<V> implements Configurable, KeyValueSt
       }
 
       return rowData.containsColumn(mColumn.getFamily(), mColumn.getQualifier());
-    }
-
-    /**
-     * @param key the non-null key that may define an entity in the KeyValueStore.
-     * @return true if the key is present in the KeyValueStore.
-     * @throws IOException if there is an IO error communicating with the underlying
-     *     storage medium for the KeyValueStore.
-     * @deprecated Use {@link #containsKey(EntityId)}
-     */
-    @Deprecated
-    public boolean containsKey(String key) throws IOException {
-      return containsKey(mKijiTable.getEntityId(key));
     }
 
     /** {@inheritDoc} */
