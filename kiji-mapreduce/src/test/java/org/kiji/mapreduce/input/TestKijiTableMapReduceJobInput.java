@@ -105,5 +105,10 @@ public class TestKijiTableMapReduceJobInput extends KijiClientTest {
         (KijiDataRequest) SerializationUtils.deserialize(
             Base64.decodeBase64(conf.get(KijiConfKeys.KIJI_INPUT_DATA_REQUEST)));
     assertEquals(dataRequest, decoded);
+
+    final String confStartRow = Base64.encodeBase64String(startRow.getHBaseRowKey());
+    final String confLimitRow = Base64.encodeBase64String(limitRow.getHBaseRowKey());
+    assertEquals(confStartRow, conf.get(KijiConfKeys.KIJI_START_ROW_KEY));
+    assertEquals(confLimitRow, conf.get(KijiConfKeys.KIJI_LIMIT_ROW_KEY));
   }
 }

@@ -98,7 +98,7 @@ public class IntegrationTestKijiTableInputFormat
     }
   }
 
-  public Job setupJob() throws Exception {
+  public Job setupJob(EntityId startKey, EntityId limitKey) throws Exception {
     final Job job = new Job(createConfiguration());
     final Configuration conf = job.getConfiguration();
 
@@ -110,7 +110,7 @@ public class IntegrationTestKijiTableInputFormat
     job.setJarByClass(IntegrationTestKijiTableInputFormat.class);
 
     // Setup the InputFormat.
-    KijiTableInputFormat.configureJob(job, getFooTable().getURI(), request, null, null);
+    KijiTableInputFormat.configureJob(job, getFooTable().getURI(), request, startKey, limitKey);
     job.setInputFormatClass(KijiTableInputFormat.class);
 
     // Duplicate functionality from MapReduceJobBuilder, since we are not using it here:
@@ -132,7 +132,7 @@ public class IntegrationTestKijiTableInputFormat
     // Create a test job.
     final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
         getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
-    final Job job = setupJob();
+    final Job job = setupJob(null, null);
     job.setJobName("testMapJob");
 
     // Setup the OutputFormat.
@@ -172,13 +172,56 @@ public class IntegrationTestKijiTableInputFormat
     // see: https://issues.apache.org/jira/browse/HADOOP-7973
   }
 
+  /** Test KijiTableInputFormat in a map-only job with start and limit keys. */
+  @Test
+  public void testMapJobWithStartAndLimitKeys() throws Exception {
+    // Create a test job.
+    final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
+        getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
+    // Set the same entity IDs for start and limit, and we should get just the start row
+    final Job job = setupJob(getFooTable().getEntityId("jane.doe@gmail.com"),
+            getFooTable().getEntityId("jane.doe@gmail.com"));
+    job.setJobName("testMapJob");
+
+    // Setup the OutputFormat.
+    TextOutputFormat.setOutputPath(job, outputFile.getParent());
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(Text.class);
+    job.setOutputFormatClass(TextOutputFormat.class);
+
+    // Set the mapper class.
+    job.setMapperClass(TestMapper.class);
+
+    // Run the job.
+    assertTrue("Hadoop job failed", job.waitForCompletion(true));
+
+    // Check to make sure output exists.
+    final FileSystem fs =
+        FileSystem.get(job.getConfiguration()); assertTrue(fs.exists(outputFile.getParent()));
+
+    // Verify that the output matches what's expected.
+    final FSDataInputStream in = fs.open(outputFile);
+    final Set<String> actual = Sets.newHashSet(IOUtils.toString(in).trim().split("\n"));
+    final Set<String> expected = Sets.newHashSet(
+        "gmail.com\tJane Doe");
+    assertEquals("Result of job wasn't what was expected", expected, actual);
+
+    // Clean up.
+    fs.delete(outputFile.getParent(), true);
+
+    IOUtils.closeQuietly(in);
+    // NOTE: fs should get closed here, but doesn't because of a bug with FileSystem that
+    // causes it to close other thread's filesystem objects. For more information
+    // see: https://issues.apache.org/jira/browse/HADOOP-7973
+  }
+
   /** Test KijiTableInputFormat in a MapReduce job. */
   @Test
   public void testMapReduceJob() throws Exception {
     // Create a test job.
     final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
         getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
-    final Job job = setupJob();
+    final Job job = setupJob(null, null);
     job.setJobName("testMapReduceJob");
 
     // Setup the OutputFormat

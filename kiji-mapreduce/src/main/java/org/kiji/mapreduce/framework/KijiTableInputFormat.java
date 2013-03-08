@@ -29,6 +29,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.mapreduce.TableSplit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -94,14 +95,40 @@ public final class KijiTableInputFormat
       try {
         final byte[] htableName = HBaseKijiTable.downcast(table).getHTable().getTableName();
         final List<InputSplit> splits = Lists.newArrayList();
+        byte[] scanStartKey = HConstants.EMPTY_START_ROW;
+        if (null != conf.get(KijiConfKeys.KIJI_START_ROW_KEY)) {
+          scanStartKey = Base64.decodeBase64(conf.get(KijiConfKeys.KIJI_START_ROW_KEY));
+        }
+        byte[] scanLimitKey = HConstants.EMPTY_END_ROW;
+        if (null != conf.get(KijiConfKeys.KIJI_LIMIT_ROW_KEY)) {
+          scanLimitKey = Base64.decodeBase64(conf.get(KijiConfKeys.KIJI_LIMIT_ROW_KEY));
+        }
+
         for (KijiRegion region : table.getRegions()) {
-          final byte[] startKey = region.getStartKey();
-          // TODO(KIJIMR-65): For now pick the first available location (ie. region server), if any.
-          final String location =
+          final byte[] regionStartKey = region.getStartKey();
+          final byte[] regionEndKey = region.getEndKey();
+          // Determine if the scan start and limit key fall into the region.
+          // Logic was copied from o.a.h.h.m.TableInputFormatBase
+          if ((scanStartKey.length == 0 || regionEndKey.length == 0
+               || Bytes.compareTo(scanStartKey, regionEndKey) < 0)
+             && (scanLimitKey.length == 0
+               || Bytes.compareTo(scanLimitKey, regionStartKey) > 0)) {
+            byte[] splitStartKey = (scanStartKey.length == 0
+              || Bytes.compareTo(regionStartKey, scanStartKey) >= 0)
+              ? regionStartKey : scanStartKey;
+            byte[] splitEndKey = ((scanLimitKey.length == 0
+              || Bytes.compareTo(regionEndKey, scanLimitKey) <= 0)
+              && regionEndKey.length > 0)
+              ? regionEndKey : scanLimitKey;
+
+            // TODO(KIJIMR-65): For now pick the first available location (ie. region server),
+            // if any.
+            final String location =
               region.getLocations().isEmpty() ? null : region.getLocations().iterator().next();
-          final TableSplit tableSplit =
-              new TableSplit(htableName, startKey, region.getEndKey(), location);
-          splits.add(new KijiTableSplit(tableSplit, startKey));
+            final TableSplit tableSplit =
+              new TableSplit(htableName, splitStartKey, splitEndKey, location);
+            splits.add(new KijiTableSplit(tableSplit, splitStartKey));
+          }
         }
         return splits;
 
@@ -127,8 +154,8 @@ public final class KijiTableInputFormat
       Job job,
       KijiURI tableURI,
       KijiDataRequest dataRequest,
-      String startRow,
-      String endRow)
+      EntityId startRow,
+      EntityId endRow)
       throws IOException {
     final Configuration conf = job.getConfiguration();
 
@@ -143,6 +170,14 @@ public final class KijiTableInputFormat
         Base64.encodeBase64String(SerializationUtils.serialize(dataRequest));
     conf.set(KijiConfKeys.KIJI_INPUT_DATA_REQUEST, serializedRequest);
     conf.set(KijiConfKeys.KIJI_INPUT_TABLE_URI, tableURI.toString());
+    if (null != startRow) {
+      conf.set(KijiConfKeys.KIJI_START_ROW_KEY,
+          Base64.encodeBase64String(startRow.getHBaseRowKey()));
+    }
+    if (null != endRow) {
+      conf.set(KijiConfKeys.KIJI_LIMIT_ROW_KEY,
+          Base64.encodeBase64String(endRow.getHBaseRowKey()));
+    }
   }
 
   /** Hadoop record reader for Kiji table rows. */

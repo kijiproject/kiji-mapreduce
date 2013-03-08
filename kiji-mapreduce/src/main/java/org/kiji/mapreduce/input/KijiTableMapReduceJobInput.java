@@ -204,7 +204,19 @@ public final class KijiTableMapReduceJobInput extends MapReduceJobInput {
         Base64.encodeBase64String(SerializationUtils.serialize(mDataRequest));
     conf.set(KijiConfKeys.KIJI_INPUT_DATA_REQUEST, dataRequestB64);
 
-    // TODO(KIJIMR-64): Serialize the row options (filters)
+    if (null != mRowOptions) {
+      if (null != mRowOptions.getStartRow()) {
+        conf.set(KijiConfKeys.KIJI_START_ROW_KEY,
+            Base64.encodeBase64String(mRowOptions.getStartRow().getHBaseRowKey()));
+      }
+      if (null != mRowOptions.getLimitRow()) {
+        conf.set(KijiConfKeys.KIJI_LIMIT_ROW_KEY,
+            Base64.encodeBase64String(mRowOptions.getLimitRow().getHBaseRowKey()));
+      }
+      // TODO(KIJIMR-64): Serialize the row options (filters)
+      // if (null != mRowOptions.getRowFilter()) {
+      // }
+    }
   }
 
   /** {@inheritDoc} */
