@@ -162,8 +162,6 @@ public final class KijiTableInputFormat
     // TODO: Check for jars config:
     // GenericTableMapReduceUtil.initTableInput(hbaseTableName, scan, job);
 
-    // TODO: Obey specified start/end rows.
-
     // Write all the required values to the job's configuration object.
     job.setInputFormatClass(KijiTableInputFormat.class);
     final String serializedRequest =
@@ -178,6 +176,7 @@ public final class KijiTableInputFormat
       conf.set(KijiConfKeys.KIJI_LIMIT_ROW_KEY,
           Base64.encodeBase64String(endRow.getHBaseRowKey()));
     }
+    // TODO(KIJIMR-64): Serialize the row options (filters)
   }
 
   /** Hadoop record reader for Kiji table rows. */
