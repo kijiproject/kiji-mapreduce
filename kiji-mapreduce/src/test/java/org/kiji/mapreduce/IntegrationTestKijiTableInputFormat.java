@@ -182,7 +182,7 @@ public class IntegrationTestKijiTableInputFormat
         getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
     // Set the same entity IDs for start and limit, and we should get just the start row
     final Job job = setupJob(getFooTable().getEntityId("jane.doe@gmail.com"),
-            getFooTable().getEntityId("jane.doe@gmail.com"), null);
+        getFooTable().getEntityId("jane.doe@gmail.com"), null);
     job.setJobName("testMapJob");
 
     // Setup the OutputFormat.

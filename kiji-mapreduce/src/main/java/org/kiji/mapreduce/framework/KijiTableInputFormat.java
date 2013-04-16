@@ -53,7 +53,6 @@ import org.kiji.schema.KijiTableReader;
 import org.kiji.schema.KijiTableReader.KijiScannerOptions;
 import org.kiji.schema.KijiURI;
 import org.kiji.schema.filter.KijiRowFilter;
-import org.kiji.schema.filter.KijiRowFilterDeserializer;
 import org.kiji.schema.impl.HBaseKijiRowData;
 import org.kiji.schema.impl.HBaseKijiTable;
 import org.kiji.schema.util.ResourceUtils;
@@ -149,7 +148,8 @@ public final class KijiTableInputFormat
    * @param tableURI URI of the table to read from.
    * @param dataRequest Data request.
    * @param startRow Minimum row key to process.
-   * @param endRow Maximum row Key to process.
+   * @param endRow Maximum row key to process.
+   * @param filter Filter to use for scanning.
    * @throws IOException on I/O error.
    */
   public static void configureJob(
@@ -230,7 +230,7 @@ public final class KijiTableInputFormat
           .setStopRow(HBaseEntityId.fromHBaseRowKey(mSplit.getEndRow()));
       final String filterJson = conf.get(KijiConfKeys.KIJI_ROW_FILTER);
       if (null != filterJson) {
-        KijiRowFilter filter = KijiRowFilterDeserializer.toFilter(filterJson);
+        KijiRowFilter filter = KijiRowFilter.toFilter(filterJson);
         scannerOptions.setKijiRowFilter(filter);
       }
       mKiji = Kiji.Factory.open(inputURI, conf);

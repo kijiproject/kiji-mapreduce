@@ -186,10 +186,10 @@ public final class KijiTableMapReduceJobInput extends MapReduceJobInput {
   public void configure(Job job) throws IOException {
     // Configure the input format class.
     super.configure(job);
-    // TODO(KIJIMR-64): Serialize the row options (filters)
     KijiTableInputFormat.configureJob(job, mInputTableURI, mDataRequest,
-        mRowOptions != null ? mRowOptions.getStartRow() : null,
-        mRowOptions != null ? mRowOptions.getLimitRow() : null);
+        null != mRowOptions ? mRowOptions.getStartRow() : null,
+        null != mRowOptions ? mRowOptions.getLimitRow() : null,
+        null != mRowOptions ? mRowOptions.getRowFilter() : null);
   }
 
   /** {@inheritDoc} */
