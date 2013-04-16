@@ -52,6 +52,8 @@ import org.kiji.schema.KijiTable;
 import org.kiji.schema.KijiTableReader;
 import org.kiji.schema.KijiTableReader.KijiScannerOptions;
 import org.kiji.schema.KijiURI;
+import org.kiji.schema.filter.KijiRowFilter;
+import org.kiji.schema.filter.KijiRowFilterDeserializer;
 import org.kiji.schema.impl.HBaseKijiRowData;
 import org.kiji.schema.impl.HBaseKijiTable;
 import org.kiji.schema.util.ResourceUtils;
@@ -155,7 +157,8 @@ public final class KijiTableInputFormat
       KijiURI tableURI,
       KijiDataRequest dataRequest,
       EntityId startRow,
-      EntityId endRow)
+      EntityId endRow,
+      KijiRowFilter filter)
       throws IOException {
     final Configuration conf = job.getConfiguration();
 
@@ -176,7 +179,9 @@ public final class KijiTableInputFormat
       conf.set(KijiConfKeys.KIJI_LIMIT_ROW_KEY,
           Base64.encodeBase64String(endRow.getHBaseRowKey()));
     }
-    // TODO(KIJIMR-64): Serialize the row options (filters)
+    if (null != filter) {
+      conf.set(KijiConfKeys.KIJI_ROW_FILTER, filter.toJson().toString());
+    }
   }
 
   /** Hadoop record reader for Kiji table rows. */
@@ -223,6 +228,11 @@ public final class KijiTableInputFormat
       final KijiScannerOptions scannerOptions = new KijiScannerOptions()
           .setStartRow(HBaseEntityId.fromHBaseRowKey(mSplit.getStartRow()))
           .setStopRow(HBaseEntityId.fromHBaseRowKey(mSplit.getEndRow()));
+      final String filterJson = conf.get(KijiConfKeys.KIJI_ROW_FILTER);
+      if (null != filterJson) {
+        KijiRowFilter filter = KijiRowFilterDeserializer.toFilter(filterJson);
+        scannerOptions.setKijiRowFilter(filter);
+      }
       mKiji = Kiji.Factory.open(inputURI, conf);
       mTable = mKiji.openTable(inputURI.getTable());
       mReader = mTable.openTableReader();

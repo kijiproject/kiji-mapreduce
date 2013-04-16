@@ -50,6 +50,7 @@ import org.kiji.schema.EntityId;
 import org.kiji.schema.KijiDataRequest;
 import org.kiji.schema.KijiDataRequestBuilder.ColumnsDef;
 import org.kiji.schema.KijiRowData;
+import org.kiji.schema.filter.KijiRowFilter;
 import org.kiji.schema.testutil.FooTableIntegrationTest;
 
 /** Tests for the KijiTableInputFormat. */
@@ -98,7 +99,7 @@ public class IntegrationTestKijiTableInputFormat
     }
   }
 
-  public Job setupJob(EntityId startKey, EntityId limitKey) throws Exception {
+  public Job setupJob(EntityId startKey, EntityId limitKey, KijiRowFilter filter) throws Exception {
     final Job job = new Job(createConfiguration());
     final Configuration conf = job.getConfiguration();
 
@@ -110,7 +111,8 @@ public class IntegrationTestKijiTableInputFormat
     job.setJarByClass(IntegrationTestKijiTableInputFormat.class);
 
     // Setup the InputFormat.
-    KijiTableInputFormat.configureJob(job, getFooTable().getURI(), request, startKey, limitKey);
+    KijiTableInputFormat.configureJob(job, getFooTable().getURI(), request,
+        startKey, limitKey, filter);
     job.setInputFormatClass(KijiTableInputFormat.class);
 
     // Duplicate functionality from MapReduceJobBuilder, since we are not using it here:
@@ -132,7 +134,7 @@ public class IntegrationTestKijiTableInputFormat
     // Create a test job.
     final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
         getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
-    final Job job = setupJob(null, null);
+    final Job job = setupJob(null, null, null);
     job.setJobName("testMapJob");
 
     // Setup the OutputFormat.
@@ -180,7 +182,7 @@ public class IntegrationTestKijiTableInputFormat
         getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
     // Set the same entity IDs for start and limit, and we should get just the start row
     final Job job = setupJob(getFooTable().getEntityId("jane.doe@gmail.com"),
-            getFooTable().getEntityId("jane.doe@gmail.com"));
+            getFooTable().getEntityId("jane.doe@gmail.com"), null);
     job.setJobName("testMapJob");
 
     // Setup the OutputFormat.
@@ -221,7 +223,7 @@ public class IntegrationTestKijiTableInputFormat
     // Create a test job.
     final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
         getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
-    final Job job = setupJob(null, null);
+    final Job job = setupJob(null, null, null);
     job.setJobName("testMapReduceJob");
 
     // Setup the OutputFormat

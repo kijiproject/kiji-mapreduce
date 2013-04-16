@@ -43,6 +43,9 @@ public final class KijiConfKeys {
   /** HBase limit row key. */
   public static final String KIJI_LIMIT_ROW_KEY = "kiji.input.limit.key";
 
+  /** Serialized KijiRowFilter. */
+  public static final String KIJI_ROW_FILTER = "kiji.input.row.filter";
+
   /** Fully qualified name of the KijiGatherer class to run. */
   public static final String KIJI_GATHERER_CLASS = "kiji.gatherer.class";
 
