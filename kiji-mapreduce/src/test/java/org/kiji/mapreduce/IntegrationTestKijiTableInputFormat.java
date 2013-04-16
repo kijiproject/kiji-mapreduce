@@ -99,7 +99,18 @@ public class IntegrationTestKijiTableInputFormat
     }
   }
 
-  public Job setupJob(EntityId startKey, EntityId limitKey, KijiRowFilter filter) throws Exception {
+  private Job setupJob(EntityId start, EntityId limit, KijiRowFilter filter) throws Exception {
+    return setupJob("job", createOutputFile(), null, null, start, limit, filter);
+  }
+
+  public Job setupJob(
+      String jobName,
+      Path outputFile,
+      Class<? extends Mapper> mapperClass,
+      Class<? extends Reducer> reducerClass,
+      EntityId startKey,
+      EntityId limitKey,
+      KijiRowFilter filter) throws Exception {
     final Job job = new Job(createConfiguration());
     final Configuration conf = job.getConfiguration();
 
@@ -125,17 +136,8 @@ public class IntegrationTestKijiTableInputFormat
     }
     DistributedCacheJars.addJarsToDistributedCache(job, jarFiles);
 
-    return job;
-  }
-
-  /** Test KijiTableInputFormat in a map-only job. */
-  @Test
-  public void testMapJob() throws Exception {
     // Create a test job.
-    final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
-        getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
-    final Job job = setupJob(null, null, null);
-    job.setJobName("testMapJob");
+    job.setJobName(jobName);
 
     // Setup the OutputFormat.
     TextOutputFormat.setOutputPath(job, outputFile.getParent());
@@ -144,7 +146,35 @@ public class IntegrationTestKijiTableInputFormat
     job.setOutputFormatClass(TextOutputFormat.class);
 
     // Set the mapper class.
-    job.setMapperClass(TestMapper.class);
+    if (null != mapperClass) {
+      job.setMapperClass(mapperClass);
+    }
+    // Set the reducer class.
+    if (null != reducerClass) {
+      job.setReducerClass(reducerClass);
+    }
+
+    return job;
+  }
+
+  private Path createOutputFile() {
+    return new Path(String.format("/%s-%s-%d/part-r-00000",
+        getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
+  }
+
+  /** Test KijiTableInputFormat in a map-only job. */
+  @Test
+  public void testMapJob() throws Exception {
+    final Path outputFile = createOutputFile();
+    // Create a test job.
+    final Job job = setupJob(
+        "testMapJob",
+        outputFile,
+        TestMapper.class,
+        null, // reducer class
+        null, // start key
+        null, // limit key
+        null);// filter
 
     // Run the job.
     assertTrue("Hadoop job failed", job.waitForCompletion(true));
@@ -177,29 +207,25 @@ public class IntegrationTestKijiTableInputFormat
   /** Test KijiTableInputFormat in a map-only job with start and limit keys. */
   @Test
   public void testMapJobWithStartAndLimitKeys() throws Exception {
-    // Create a test job.
-    final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
-        getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
+    final Path outputFile = createOutputFile();
     // Set the same entity IDs for start and limit, and we should get just the start row
-    final Job job = setupJob(getFooTable().getEntityId("jane.doe@gmail.com"),
-        getFooTable().getEntityId("jane.doe@gmail.com"), null);
-    job.setJobName("testMapJob");
-
-    // Setup the OutputFormat.
-    TextOutputFormat.setOutputPath(job, outputFile.getParent());
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(Text.class);
-    job.setOutputFormatClass(TextOutputFormat.class);
-
-    // Set the mapper class.
-    job.setMapperClass(TestMapper.class);
+    final EntityId startAndLimitKey = getFooTable().getEntityId("jane.doe@gmail.com");
+    // Create a test job.
+    final Job job = setupJob(
+        "testMapJobWithStartAndLimitKeys",
+        outputFile,
+        TestMapper.class,
+        null, // reducer class
+        startAndLimitKey,
+        startAndLimitKey,
+        null);// filter
 
     // Run the job.
     assertTrue("Hadoop job failed", job.waitForCompletion(true));
 
     // Check to make sure output exists.
-    final FileSystem fs =
-        FileSystem.get(job.getConfiguration()); assertTrue(fs.exists(outputFile.getParent()));
+    final FileSystem fs = FileSystem.get(job.getConfiguration());
+    assertTrue(fs.exists(outputFile.getParent()));
 
     // Verify that the output matches what's expected.
     final FSDataInputStream in = fs.open(outputFile);
@@ -220,21 +246,16 @@ public class IntegrationTestKijiTableInputFormat
   /** Test KijiTableInputFormat in a MapReduce job. */
   @Test
   public void testMapReduceJob() throws Exception {
+    final Path outputFile = createOutputFile();
     // Create a test job.
-    final Path outputFile = new Path(String.format("/%s-%s-%d/part-r-00000",
-        getClass().getName(), mTestName.getMethodName(), System.currentTimeMillis()));
-    final Job job = setupJob(null, null, null);
-    job.setJobName("testMapReduceJob");
-
-    // Setup the OutputFormat
-    TextOutputFormat.setOutputPath(job, outputFile.getParent());
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(Text.class);
-    job.setOutputFormatClass(TextOutputFormat.class);
-
-    // Set the mapper and reducer.
-    job.setMapperClass(TestMapper.class);
-    job.setReducerClass(TestReducer.class);
+    final Job job = setupJob(
+        "testMapReduceJob",
+        outputFile,
+        TestMapper.class,
+        TestReducer.class,
+        null, // start key
+        null, // limit key
+        null);// filter
 
     // Run the job.
     assertTrue("Hadoop job failed", job.waitForCompletion(true));
