@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
+import org.apache.avro.Schema;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -46,11 +47,13 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.junit.Test;
 
 import org.kiji.mapreduce.framework.KijiTableInputFormat;
+import org.kiji.schema.DecodedCell;
 import org.kiji.schema.EntityId;
 import org.kiji.schema.KijiDataRequest;
 import org.kiji.schema.KijiDataRequestBuilder.ColumnsDef;
 import org.kiji.schema.KijiRowData;
 import org.kiji.schema.filter.KijiRowFilter;
+import org.kiji.schema.filter.ColumnValueEqualsRowFilter;
 import org.kiji.schema.testutil.FooTableIntegrationTest;
 
 /** Tests for the KijiTableInputFormat. */
@@ -232,6 +235,44 @@ public class IntegrationTestKijiTableInputFormat
     final Set<String> actual = Sets.newHashSet(IOUtils.toString(in).trim().split("\n"));
     final Set<String> expected = Sets.newHashSet(
         "gmail.com\tJane Doe");
+    assertEquals("Result of job wasn't what was expected", expected, actual);
+
+    // Clean up.
+    fs.delete(outputFile.getParent(), true);
+
+    IOUtils.closeQuietly(in);
+    // NOTE: fs should get closed here, but doesn't because of a bug with FileSystem that
+    // causes it to close other thread's filesystem objects. For more information
+    // see: https://issues.apache.org/jira/browse/HADOOP-7973
+  }
+
+  /** Test KijiTableInputFormat in a map-only job with a row filter. */
+  @Test
+  public void testMapJobWithFilter() throws Exception {
+    final KijiRowFilter filter = new ColumnValueEqualsRowFilter("info", "email",
+        new DecodedCell<String>(Schema.create(Schema.Type.STRING), "aaron@usermail.example.com"));
+    final Path outputFile = createOutputFile();
+    // Create a test job.
+    final Job job = setupJob(
+        "testMapJobWithFilter",
+        outputFile,
+        TestMapper.class,
+        null, // reducer class
+        null, // start key
+        null, // limit key
+        filter);
+
+    // Run the job.
+    assertTrue("Hadoop job failed", job.waitForCompletion(true));
+
+    // Check to make sure output exists.
+    final FileSystem fs = FileSystem.get(job.getConfiguration());
+    assertTrue(fs.exists(outputFile.getParent()));
+
+    // Verify that the output matches what's expected.
+    final FSDataInputStream in = fs.open(outputFile);
+    final Set<String> actual = Sets.newHashSet(IOUtils.toString(in).trim().split("\n"));
+    final Set<String> expected = Sets.newHashSet("usermail.example.com\tAaron Kimball");
     assertEquals("Result of job wasn't what was expected", expected, actual);
 
     // Clean up.
