@@ -22,6 +22,7 @@ package org.kiji.mapreduce.kvstore.lib;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
 import static org.kiji.schema.util.ResourceUtils.closeOrLog;
 import static org.kiji.schema.util.ResourceUtils.releaseOrLog;
 

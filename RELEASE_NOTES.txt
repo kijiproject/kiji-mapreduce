@@ -3,13 +3,13 @@
                               KijiMR Release Notes
 
 Version 1.0.0-rc61
+  * KIJIMR-52. KijiTableKeyValueStore reader should look up by EntityId, not by
+      String.
   * KIJIMR-166. Add HBase jars to MapReduce task classpath.
   * KIJIMR-167. Print better status messages indicating whether jobs succeed
       or fail.
   * KIJIMR-64. Serialize row filters & start/limit row keys for MapReduce jobs.
   * KIJIMR-151. Pass Configuration to Kiji in HFileMapReduceJobOutput.
-  * KIJIMR-52. KijiTableKeyValueStore reader should look up by EntityId, not by
-      String.
 
 Version 1.0.0-rc6
   * KIJIMRLIB-14. Add XML input format.
