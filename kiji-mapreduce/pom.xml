@@ -36,6 +36,8 @@
 
   <properties>
     <kiji-avro.version>1.1.2-cdh4</kiji-avro.version>
+    <aspectj-maven-plugin-version>1.4</aspectj-maven-plugin-version>
+    <org.aspectj-version>1.7.2</org.aspectj-version>
   </properties>
 
   <build>
@@ -125,6 +127,23 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>aspectj-maven-plugin</artifactId>
+          <version>${aspectj-maven-plugin-version}</version>
+          <executions>
+              <execution>
+                  <goals>
+                      <goal>compile</goal>
+                      <goal>test-compile</goal>
+                  </goals>
+                  <configuration>
+                      <source>${maven.compiler.source}</source>
+                      <target>${maven.compiler.target}</target>
+                  </configuration>
+              </execution>
+          </executions>
       </plugin>
     </plugins>
   </build>
@@ -226,6 +245,11 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>1.4</version>
+    </dependency>
+    <dependency>
+        <groupId>org.aspectj</groupId>
+        <artifactId>aspectjrt</artifactId>
+        <version>${org.aspectj-version}</version>
     </dependency>
 
     <!-- All platform bridge implementations that should be bundled with the redistributable. -->
