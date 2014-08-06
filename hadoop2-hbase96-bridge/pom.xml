@@ -74,9 +74,10 @@
       <version>${hadoop2.version}</version>
       <scope>provided</scope>
     </dependency>
+
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-yarn-server-tests</artifactId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
       <version>${hadoop2.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -86,6 +87,12 @@
       <artifactId>hbase-common</artifactId>
       <version>${hbase.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
