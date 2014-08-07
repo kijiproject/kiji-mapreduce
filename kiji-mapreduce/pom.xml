@@ -42,7 +42,6 @@
     <aspectjrt.version>1.7.2</aspectjrt.version>
     <!-- CDH5 versions of hadoop and hbase artifacts. -->
     <cdh5-hadoop.version>2.3.0-cdh5.0.3</cdh5-hadoop.version>
-
     <cdh5-hbase.version>0.96.1.1-cdh5.0.3</cdh5-hbase.version>
   </properties>
 
@@ -197,12 +196,6 @@
       <version>${cdh5-hadoop.version}</version>
       <scope>provided</scope>
     </dependency>
-<!--    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-      <version>${cdh5-hbase.version}</version>
-      <scope>provided</scope>
-    </dependency>-->
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-client</artifactId>
@@ -225,6 +218,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
       <groupId>org.apache.mrunit</groupId>
       <artifactId>mrunit</artifactId>
@@ -284,10 +278,10 @@
         <plugins>
           <!-- Activate integration tests for Hadoop 2 / CDH 5 -->
 
-          <plugin>
+          <!--<plugin>
             <groupId>org.kiji.maven.plugins</groupId>
             <artifactId>hbase-maven-plugin</artifactId>
-          </plugin>
+          </plugin>-->
 
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
